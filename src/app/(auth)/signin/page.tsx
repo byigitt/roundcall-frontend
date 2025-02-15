@@ -44,6 +44,15 @@ const signInSchema = z.object({
 
 type SignInFormValues = z.infer<typeof signInSchema>
 
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'Trainer' | 'Trainee';
+  createdAt: string;
+}
+
 export default function SignInPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -63,37 +72,26 @@ export default function SignInPage() {
       try {
         const response = await login(data)
         
-        if (response.status === "success" && response.data) {
-          // Fetch user profile
-          const userResponse = await getUserProfile()
-          console.log(userResponse);
-          if (userResponse.status === "success" && userResponse.data) {
-            setUser(userResponse.data.user)
-            
-            toast({
-              title: "Welcome back",
-              description: response.message || "You have successfully signed in.",
-            })
+        if (response.status === 'success' && response.data) {
+          // User data is already in the login response
+          setUser(response.data.user)
+          
+          toast({
+            title: "Welcome back",
+            description: "You have successfully signed in.",
+          })
 
-            // Redirect based on user role
-            const role = userResponse.data.user.role
-            if (role === "admin" || role === "trainer") {
-              router.push("/dashboard/manage")
-            } else {
-              router.push("/dashboard/practice")
-            }
+          // Redirect based on user role
+          if (response.data.user.role === "Trainer") {
+            router.push("/dashboard/manage")
           } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to fetch user profile.",
-            })
+            router.push("/dashboard/practice")
           }
         } else {
           toast({
             variant: "destructive",
             title: "Error",
-            description: response.message || "Invalid error.",
+            description: response.error?.message || "Invalid credentials.",
           })
         }
       } catch (error) {
@@ -167,11 +165,6 @@ export default function SignInPage() {
         </Form>
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
-        <div className="text-sm text-muted-foreground text-center">
-          <Link href="/reset-password" className="hover:text-primary">
-            Forgot your password?
-          </Link>
-        </div>
         <div className="text-sm text-muted-foreground text-center">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-primary hover:underline">

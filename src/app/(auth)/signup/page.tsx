@@ -12,12 +12,9 @@ import { Input } from "@/components/ui/input"
 import { Loading } from "@/components/ui/loading"
 import Link from "next/link"
 import * as z from "zod"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const signUpSchema = z.object({
-  username: z.string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be at most 20 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Only alphanumeric characters and underscore allowed"),
   email: z.string()
     .email("Invalid email address")
     .regex(/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/, "Invalid email format"),
@@ -39,9 +36,13 @@ const signUpSchema = z.object({
     .min(2, "Department must be at least 2 characters")
     .max(50, "Department must be at most 50 characters")
     .optional(),
+  role: z.enum(["Trainer", "Trainee"], {
+    required_error: "Please select a role",
+  }),
 })
 
 type SignUpFormValues = z.infer<typeof signUpSchema>
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -51,19 +52,19 @@ export default function SignUpPage() {
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       firstName: "",
       lastName: "",
       department: "",
+      role: "Trainee",
     }
   })
 
   const onSubmit = async (data: SignUpFormValues) => {
     setIsSubmitting(true)
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(`${API_URL}/users/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,7 +74,7 @@ export default function SignUpPage() {
 
       const result = await response.json()
 
-      if (result.success) {
+      if (result.email) {
         toast({
           title: "Registration successful",
           description: result.message || "Please sign in with your credentials.",
@@ -108,19 +109,6 @@ export default function SignUpPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="johndoe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -180,10 +168,31 @@ export default function SignUpPage() {
               name="department"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department (Optional)</FormLabel>
+                  <FormLabel>Department</FormLabel>
                   <FormControl>
                     <Input placeholder="Sales" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Trainee">Trainee</SelectItem>
+                      <SelectItem value="Trainer">Trainer</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
