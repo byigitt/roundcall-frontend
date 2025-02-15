@@ -2,14 +2,15 @@ import { create, StateCreator } from 'zustand'
 
 interface User {
   _id: string;
-  username: string;
   email: string;
   firstName: string;
   lastName: string;
-  department: string;
-  role: 'user' | 'admin' | 'trainer' | 'trainee';
-  isActive: boolean;
+  role: string;
+  department?: string;
+  avatarUrl?: string;
+  createdAt: string;
   lastLogin: string;
+  isActive: boolean;
 }
 
 interface UserState {

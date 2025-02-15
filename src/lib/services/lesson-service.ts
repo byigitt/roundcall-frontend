@@ -1,50 +1,48 @@
 import { getAuthHeader } from "@/lib/auth/tokens"
 import * as z from "zod"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
 // Validation schemas
 export const lessonSchema = z.object({
   title: z.string()
     .min(5, "Title must be at least 5 characters")
     .max(200, "Title must be at most 200 characters"),
-  content: z.string()
-    .min(50, "Content must be at least 50 characters"),
-  videoUrl: z.string().url().optional(),
-  category: z.string().optional(),
+  description: z.string()
+    .min(50, "Description must be at least 50 characters"),
+  contentType: z.enum(["Text", "Video", "Both"]),
+  textContent: z.string().optional(),
+  videoURL: z.string().url().optional(),
+  timeBased: z.number().optional() // time limit in minutes
 })
 
 export const questionSchema = z.object({
-  text: z.string().min(10, "Question must be at least 10 characters"),
-  type: z.enum(["multipleChoice", "textRecall"]),
-  options: z.array(z.string()).min(2, "At least 2 options required").optional(),
-  correctAnswer: z.union([z.string(), z.number()]),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  points: z.number().min(1).max(100),
+  lessonID: z.string(),
+  questionText: z.string().min(10, "Question must be at least 10 characters"),
+  options: z.record(z.string(), z.string()),
+  correctAnswer: z.string(),
+  timeLimit: z.number() // seconds
 })
 
 // Types
-export type Lesson = z.infer<typeof lessonSchema>
-export type Question = z.infer<typeof questionSchema>
-
-interface ApiResponse<T> {
-  status: "success" | "error"
-  data?: T
-  error?: {
-    code: string
-    message: string
-    details?: any
-  }
-  meta?: {
-    page?: number
-    limit?: number
-    total?: number
-    hasMore?: boolean
-  }
+export type Lesson = z.infer<typeof lessonSchema> & {
+  id?: string
+  createdBy?: string
+  createdAt?: string
+  status?: LessonStatus
+  progress?: number
 }
 
+export type Question = z.infer<typeof questionSchema> & {
+  id?: string
+  trainerID?: string
+  createdAt?: string
+}
+
+export type LessonStatus = "Assigned" | "In Progress" | "Completed"
+
 // API Functions
-export async function createLesson(lesson: Lesson): Promise<ApiResponse<{ lesson: Lesson }>> {
+export async function createLesson(lesson: Lesson): Promise<{ id: string } | { detail: string }> {
   try {
     const response = await fetch(`${API_URL}/lessons`, {
       method: "POST",
@@ -52,185 +50,88 @@ export async function createLesson(lesson: Lesson): Promise<ApiResponse<{ lesson
         "Content-Type": "application/json",
         ...getAuthHeader(),
       },
-      body: JSON.stringify(lesson),
+      credentials: 'include',
+      body: JSON.stringify({
+        title: lesson.title,
+        description: lesson.description,
+        contentType: lesson.contentType,
+        textContent: lesson.textContent,
+        videoURL: lesson.videoURL,
+        timeBased: lesson.timeBased
+      })
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "LESSON_001",
-          message: data.message || "Failed to create lesson",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to create lesson" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
-export async function getLessons(params?: {
-  page?: number
-  limit?: number
-  search?: string
-  category?: string
-  sort?: string
-}): Promise<ApiResponse<{ lessons: Lesson[] }>> {
+export async function getLessons(): Promise<Lesson[] | { detail: string }> {
   try {
-    const queryParams = new URLSearchParams()
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString())
-      })
-    }
-
-    const response = await fetch(
-      `${API_URL}/lessons?${queryParams.toString()}`,
-      {
-        headers: getAuthHeader(),
-      }
-    )
-
-    const data = await response.json()
+    const response = await fetch(`${API_URL}/lessons`, {
+      headers: getAuthHeader(),
+    })
 
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "LESSON_002",
-          message: data.message || "Failed to fetch lessons",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to fetch lessons" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
-export async function getLesson(id: string): Promise<ApiResponse<{ lesson: Lesson }>> {
+export async function getLesson(id: string): Promise<Lesson | { detail: string }> {
   try {
     const response = await fetch(`${API_URL}/lessons/${id}`, {
       headers: getAuthHeader(),
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "LESSON_003",
-          message: data.message || "Failed to fetch lesson",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to fetch lesson" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
-export async function updateLesson(
-  id: string,
-  lesson: Partial<Lesson>
-): Promise<ApiResponse<{ lesson: Lesson }>> {
+export async function updateLessonStatus(lessonId: string, status: LessonStatus): Promise<{ message: string } | { detail: string }> {
   try {
-    const response = await fetch(`${API_URL}/lessons/${id}`, {
+    const response = await fetch(`${API_URL}/lessons/${lessonId}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
       },
-      body: JSON.stringify(lesson),
+      body: JSON.stringify({ status }),
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "LESSON_004",
-          message: data.message || "Failed to update lesson",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to update lesson status" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
-  }
-}
-
-export async function deleteLesson(id: string): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch(`${API_URL}/lessons/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeader(),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "LESSON_005",
-          message: data.message || "Failed to delete lesson",
-        },
-      }
-    }
-
-    return data
-  } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
 // Question Management
-export async function addQuestion(
-  lessonId: string,
-  question: Question
-): Promise<ApiResponse<{ question: Question }>> {
+export async function createQuestion(question: Question): Promise<{ id: string } | { detail: string }> {
   try {
-    const response = await fetch(`${API_URL}/lessons/${lessonId}/questions`, {
+    const response = await fetch(`${API_URL}/questions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -239,105 +140,90 @@ export async function addQuestion(
       body: JSON.stringify(question),
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "QUESTION_001",
-          message: data.message || "Failed to add question",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to create question" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
-export async function updateQuestion(
-  lessonId: string,
-  questionId: string,
-  question: Partial<Question>
-): Promise<ApiResponse<{ question: Question }>> {
+export async function getLessonQuestions(lessonId: string): Promise<Question[] | { detail: string }> {
   try {
-    const response = await fetch(
-      `${API_URL}/lessons/${lessonId}/questions/${questionId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify(question),
-      }
-    )
-
-    const data = await response.json()
+    const response = await fetch(`${API_URL}/questions/lesson/${lessonId}`, {
+      headers: getAuthHeader(),
+    })
 
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "QUESTION_002",
-          message: data.message || "Failed to update question",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to fetch questions" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
-    }
+    return { detail: "Failed to connect to the server" }
   }
 }
 
-export async function deleteQuestion(
-  lessonId: string,
-  questionId: string
-): Promise<ApiResponse<void>> {
+export async function answerQuestion(questionId: string, answer: { selectedAnswer: string, responseTime: number }): Promise<{ isCorrect: boolean, selectedAnswer: string, correctAnswer: string } | { detail: string }> {
   try {
-    const response = await fetch(
-      `${API_URL}/lessons/${lessonId}/questions/${questionId}`,
-      {
-        method: "DELETE",
-        headers: getAuthHeader(),
-      }
-    )
-
-    const data = await response.json()
+    const response = await fetch(`${API_URL}/questions/answer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({
+        questionID: questionId,
+        ...answer
+      }),
+    })
 
     if (!response.ok) {
-      return {
-        status: "error",
-        error: {
-          code: data.error?.code || "QUESTION_003",
-          message: data.message || "Failed to delete question",
-        },
-      }
+      const error = await response.json()
+      return { detail: error.detail || "Failed to submit answer" }
     }
 
-    return data
+    return await response.json()
   } catch (error) {
-    return {
-      status: "error",
-      error: {
-        code: "SYS_001",
-        message: "Failed to connect to the server",
-      },
+    return { detail: "Failed to connect to the server" }
+  }
+}
+
+// Analytics
+export async function getLessonAnalytics(lessonId: string): Promise<any | { detail: string }> {
+  try {
+    const response = await fetch(`${API_URL}/analytics/lesson/${lessonId}`, {
+      headers: getAuthHeader(),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return { detail: error.detail || "Failed to fetch analytics" }
     }
+
+    return await response.json()
+  } catch (error) {
+    return { detail: "Failed to connect to the server" }
+  }
+}
+
+export async function getTraineeAnalytics(traineeId: string): Promise<any | { detail: string }> {
+  try {
+    const response = await fetch(`${API_URL}/analytics/trainee/${traineeId}`, {
+      headers: getAuthHeader(),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return { detail: error.detail || "Failed to fetch trainee analytics" }
+    }
+
+    return await response.json()
+  } catch (error) {
+    return { detail: "Failed to connect to the server" }
   }
 } 
