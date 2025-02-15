@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export function Header() {
   return (
@@ -10,7 +11,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center px-4">
         {/* Logo - Fixed width */}
         <div className="w-[180px]">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <Phone className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">RoundCall</span>
           </Link>
@@ -37,6 +38,7 @@ export function Header() {
         {/* Auth Buttons - Fixed width */}
         <div className="w-[180px] flex justify-end">
           <div className="flex items-center space-x-4">
+            <ThemeSwitcher />
             <Link href="/signin">
               <Button variant="ghost" className="text-muted-foreground hover:text-primary">Sign In</Button>
             </Link>

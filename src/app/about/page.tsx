@@ -253,12 +253,12 @@ export default function AboutPage() {
         </section>
 
         {/* Mission Section */}
-        <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <section className="py-20 px-4 bg-primary dark:bg-black text-white">
           <div className="container mx-auto text-center max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Our Mission
             </h2>
-            <p className="text-lg mb-8 text-primary-foreground/90">
+            <p className="text-lg mb-8 text-white/90">
               To empower call centers with innovative training solutions that enhance customer service quality and agent satisfaction.
             </p>
           </div>

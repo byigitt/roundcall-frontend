@@ -2,7 +2,8 @@ import { Button } from '@/components/ui/button'
 import { 
   ArrowRight, Phone, BarChart, GraduationCap, Users, 
   CheckCircle2, Star, Award, Headphones, Globe2, 
-  BarChart3, Clock, Shield, Settings, Zap, MessageSquare
+  BarChart3, Clock, Shield, Settings, Zap, MessageSquare,
+  Sun, Moon
 } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +17,8 @@ import {
 } from "@/components/ui/card"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Footer } from "@/components/layout/footer"
+import { Header } from "@/components/layout/header"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 const companyLogos = [
   {
@@ -32,6 +35,7 @@ const companyLogos = [
   },
   {
     name: "X",
+    darkModeLogo: '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 462.799"><path fill="#fff" fill-rule="nonzero" d="M403.229 0h78.506L310.219 196.04 512 462.799H354.002L230.261 301.007 88.669 462.799h-78.56l183.455-209.683L0 0h161.999l111.856 147.88L403.229 0zm-27.556 415.805h43.505L138.363 44.527h-46.68l283.99 371.278z"/></svg>',
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/300px-X_logo_2023.svg.png",
     description: "Real-time global communication platform",
     industry: "Social Media"
@@ -44,7 +48,8 @@ const companyLogos = [
   },
   {
     name: "Amazon",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png",
+    darkModeLogo: '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 465.46"><path fill="#fff" fill-rule="nonzero" d="M141.03 228.54c0-21.41 5.28-39.72 15.83-54.92 10.55-15.21 24.98-26.69 43.29-34.45 16.75-7.13 37.39-12.25 61.9-15.36 8.38-.93 22.03-2.17 40.96-3.72v-7.91c0-19.86-2.17-33.21-6.51-40.03-6.52-9.31-16.76-13.97-30.73-13.97h-3.72c-10.24.93-19.08 4.19-26.53 9.78-7.45 5.58-12.26 13.34-14.43 23.27-1.24 6.21-4.34 9.77-9.31 10.71l-53.53-6.52c-5.27-1.24-7.91-4.03-7.91-8.38 0-.93.16-2.02.47-3.26 5.27-27.61 18.23-48.09 38.86-61.44C210.31 9 234.43 1.55 262.05 0h11.64c35.37 0 62.99 9.15 82.85 27.46 3.11 3.12 5.99 6.46 8.61 10.01 2.64 3.57 4.73 6.75 6.28 9.54 1.56 2.79 2.95 6.83 4.19 12.1 1.24 5.28 2.17 8.93 2.8 10.94.62 2.02 1.08 6.36 1.39 13.04.31 6.67.47 10.62.47 11.86v112.64c0 8.07 1.16 15.44 3.49 22.11 2.32 6.68 4.58 11.48 6.75 14.43 2.17 2.95 5.74 7.68 10.7 14.2 1.86 2.79 2.8 5.27 2.8 7.45 0 2.48-1.25 4.65-3.73 6.51-25.76 22.35-39.72 34.45-41.89 36.31-3.72 2.79-8.22 3.1-13.5.93-4.34-3.73-8.14-7.29-11.4-10.71-3.26-3.41-5.59-5.89-6.98-7.44-1.4-1.56-3.65-4.58-6.75-9.08-3.11-4.5-5.28-7.52-6.52-9.08-17.38 18.93-34.44 30.72-51.2 35.38-10.55 3.1-23.58 4.65-39.1 4.65-23.89 0-43.52-7.37-58.88-22.11-15.36-14.74-23.04-35.6-23.04-62.6zm275.55 140.57c.62-1.24 1.55-2.49 2.8-3.73 7.75-5.27 15.2-8.84 22.34-10.7 11.79-3.1 23.27-4.81 34.44-5.12 3.1-.31 6.05-.16 8.84.46 13.97 1.24 22.35 3.57 25.14 6.98 1.24 1.87 1.86 4.66 1.86 8.38v3.26c0 10.86-2.95 23.66-8.84 38.4-5.9 14.74-14.12 26.61-24.67 35.61-1.55 1.24-2.95 1.86-4.19 1.86-.62 0-1.24-.15-1.86-.46-1.86-.93-2.33-2.64-1.4-5.13 11.48-26.99 17.22-45.76 17.22-56.31 0-3.42-.62-5.9-1.86-7.45-3.1-3.72-11.79-5.59-26.06-5.59-5.28 0-11.49.31-18.62.93-7.76.94-14.9 1.86-21.42 2.8-1.86 0-3.1-.31-3.72-.94-.62-.62-.77-1.24-.46-1.86 0-.31.15-.77.46-1.39zM.93 361.2c1.55-2.49 4.03-2.64 7.45-.47 77.57 44.99 161.98 67.49 253.21 67.49 60.81 0 120.86-11.33 180.13-33.98 1.55-.62 3.8-1.55 6.75-2.79s5.04-2.17 6.28-2.79c4.65-1.86 8.3-.93 10.94 2.79 2.64 3.72 1.78 7.14-2.56 10.24-5.59 4.03-12.73 8.69-21.41 13.96-26.69 15.83-56.48 28.09-89.37 36.77-32.89 8.69-65.01 13.04-96.35 13.04-48.41 0-94.18-8.46-137.31-25.37-43.13-16.91-81.77-40.73-115.9-71.45-1.86-1.55-2.79-3.1-2.79-4.65 0-.93.31-1.87.93-2.79zm220.16-141.97c0 12.1 3.03 21.8 9.08 29.09 6.05 7.29 14.19 10.94 24.43 10.94.93 0 2.25-.16 3.96-.47 1.71-.31 2.87-.46 3.49-.46 13.03-3.41 23.12-11.79 30.25-25.13 3.42-5.9 5.98-12.34 7.68-19.32 1.71-6.98 2.64-12.65 2.8-16.99.15-4.35.23-11.48.23-21.41v-11.64c-18 0-31.65 1.24-40.96 3.72-27.31 7.76-40.96 24.98-40.96 51.67z"/></svg>',
+    logo: '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 465.46"><path fill-rule="nonzero" d="M141.03 228.54c0-21.41 5.28-39.72 15.83-54.92 10.55-15.21 24.98-26.69 43.29-34.45 16.75-7.13 37.39-12.25 61.9-15.36 8.38-.93 22.03-2.17 40.96-3.72v-7.91c0-19.86-2.17-33.21-6.51-40.03-6.52-9.31-16.76-13.97-30.73-13.97h-3.72c-10.24.93-19.08 4.19-26.53 9.78-7.45 5.58-12.26 13.34-14.43 23.27-1.24 6.21-4.34 9.77-9.31 10.71l-53.53-6.52c-5.27-1.24-7.91-4.03-7.91-8.38 0-.93.16-2.02.47-3.26 5.27-27.61 18.23-48.09 38.86-61.44C210.31 9 234.43 1.55 262.05 0h11.64c35.37 0 62.99 9.15 82.85 27.46 3.11 3.12 5.99 6.46 8.61 10.01 2.64 3.57 4.73 6.75 6.28 9.54 1.56 2.79 2.95 6.83 4.19 12.1 1.24 5.28 2.17 8.93 2.8 10.94.62 2.02 1.08 6.36 1.39 13.04.31 6.67.47 10.62.47 11.86v112.64c0 8.07 1.16 15.44 3.49 22.11 2.32 6.68 4.58 11.48 6.75 14.43 2.17 2.95 5.74 7.68 10.7 14.2 1.86 2.79 2.8 5.27 2.8 7.45 0 2.48-1.25 4.65-3.73 6.51-25.76 22.35-39.72 34.45-41.89 36.31-3.72 2.79-8.22 3.1-13.5.93-4.34-3.73-8.14-7.29-11.4-10.71-3.26-3.41-5.59-5.89-6.98-7.44-1.4-1.56-3.65-4.58-6.75-9.08-3.11-4.5-5.28-7.52-6.52-9.08-17.38 18.93-34.44 30.72-51.2 35.38-10.55 3.1-23.58 4.65-39.1 4.65-23.89 0-43.52-7.37-58.88-22.11-15.36-14.74-23.04-35.6-23.04-62.6zm275.55 140.57c.62-1.24 1.55-2.49 2.8-3.73 7.75-5.27 15.2-8.84 22.34-10.7 11.79-3.1 23.27-4.81 34.44-5.12 3.1-.31 6.05-.16 8.84.46 13.97 1.24 22.35 3.57 25.14 6.98 1.24 1.87 1.86 4.66 1.86 8.38v3.26c0 10.86-2.95 23.66-8.84 38.4-5.9 14.74-14.12 26.61-24.67 35.61-1.55 1.24-2.95 1.86-4.19 1.86-.62 0-1.24-.15-1.86-.46-1.86-.93-2.33-2.64-1.4-5.13 11.48-26.99 17.22-45.76 17.22-56.31 0-3.42-.62-5.9-1.86-7.45-3.1-3.72-11.79-5.59-26.06-5.59-5.28 0-11.49.31-18.62.93-7.76.94-14.9 1.86-21.42 2.8-1.86 0-3.1-.31-3.72-.94-.62-.62-.77-1.24-.46-1.86 0-.31.15-.77.46-1.39zM.93 361.2c1.55-2.49 4.03-2.64 7.45-.47 77.57 44.99 161.98 67.49 253.21 67.49 60.81 0 120.86-11.33 180.13-33.98 1.55-.62 3.8-1.55 6.75-2.79s5.04-2.17 6.28-2.79c4.65-1.86 8.3-.93 10.94 2.79 2.64 3.72 1.78 7.14-2.56 10.24-5.59 4.03-12.73 8.69-21.41 13.96-26.69 15.83-56.48 28.09-89.37 36.77-32.89 8.69-65.01 13.04-96.35 13.04-48.41 0-94.18-8.46-137.31-25.37-43.13-16.91-81.77-40.73-115.9-71.45-1.86-1.55-2.79-3.1-2.79-4.65 0-.93.31-1.87.93-2.79zm220.16-141.97c0 12.1 3.03 21.8 9.08 29.09 6.05 7.29 14.19 10.94 24.43 10.94.93 0 2.25-.16 3.96-.47 1.71-.31 2.87-.46 3.49-.46 13.03-3.41 23.12-11.79 30.25-25.13 3.42-5.9 5.98-12.34 7.68-19.32 1.71-6.98 2.64-12.65 2.8-16.99.15-4.35.23-11.48.23-21.41v-11.64c-18 0-31.65 1.24-40.96 3.72-27.31 7.76-40.96 24.98-40.96 51.67z"/></svg>',
     description: "E-commerce and cloud computing leader",
     industry: "Technology"
   }
@@ -53,37 +58,7 @@ const companyLogos = [
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="fixed w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center space-x-2">
-            <Phone className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">RoundCall</span>
-          </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Features
-            </Link>
-            <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Pricing
-            </Link>
-            <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              About
-            </Link>
-            <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Contact
-            </Link>
-          </nav>
-          <div className="flex items-center space-x-4">
-            <Link href="/signin">
-              <Button variant="ghost" className="text-muted-foreground hover:text-primary">Sign In</Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-primary hover:bg-primary/90">Get Started</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
+      <Header />
       <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section className="py-32 px-4 bg-gradient-to-b from-background to-muted relative overflow-hidden">
@@ -146,14 +121,36 @@ export default function Home() {
               {companyLogos.map((company) => (
                 <HoverCard key={company.name}>
                   <HoverCardTrigger asChild>
-                    <div className="relative h-8 w-32 mx-auto grayscale hover:grayscale-0 transition-all duration-300 hover:scale-105 rounded-lg p-2 bg-white/50 backdrop-blur-sm">
-                      <Image
-                        src={company.logo}
-                        alt={company.name}
-                        fill
-                        className="object-contain w-12 h-12"
-                        unoptimized
-                      />
+                    <div className="relative h-8 w-32 mx-auto grayscale hover:grayscale-0 transition-all duration-300 hover:scale-105">
+                      {(company.name === "X" || company.name === "Amazon") ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-8 h-8 dark:hidden">
+                            {company.name === "Amazon" ? (
+                              <div dangerouslySetInnerHTML={{ __html: company.logo }} />
+                            ) : (
+                              <Image
+                                src={company.logo}
+                                alt={company.name}
+                                fill
+                                className="object-contain"
+                                unoptimized
+                              />
+                            )}
+                          </div>
+                          <div 
+                            className="w-8 h-8 hidden dark:block"
+                            dangerouslySetInnerHTML={{ __html: company.darkModeLogo || '' }}
+                          />
+                        </div>
+                      ) : (
+                        <Image
+                          src={company.logo}
+                          alt={company.name}
+                          fill
+                          className="object-contain"
+                          unoptimized
+                        />
+                      )}
                     </div>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
@@ -420,22 +417,22 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <section className="py-20 px-4 bg-primary dark:bg-black text-white">
           <div className="container mx-auto text-center max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Ready to Transform Your Call Center Training?
             </h2>
-            <p className="text-lg mb-8 text-primary-foreground/90">
-              Join leading companies that have revolutionized their customer service training with RoundCall.
+            <p className="text-lg mb-8 text-white/90">
+              Start your 14-day free trial today. No credit card required.
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
               <Link href="/signup">
-                <Button size="lg" variant="secondary" className="gap-2">
-                  Start Free Trial <ArrowRight className="h-4 w-4" />
+                <Button size="lg" variant="secondary" className="gap-2 text-black dark:text-white">
+                  Start Free Trial
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button size="lg" variant="outline" className="text-black border-primary-foreground">
+                <Button size="lg" variant="secondary" className="gap-2 text-black dark:text-white">
                   Contact Sales
                 </Button>
               </Link>
