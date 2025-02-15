@@ -25,8 +25,8 @@ const navigation = [
     roles: ["admin", "trainer"]
   },
   {
-    title: "Practice",
-    href: "/dashboard/practice",
+    title: "Lessons",
+    href: "/dashboard/lessons",
     icon: <GraduationCap className="h-5 w-5" />,
     roles: ["trainee"]
   },
