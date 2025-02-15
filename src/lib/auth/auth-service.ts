@@ -1,32 +1,42 @@
 import { setTokens, removeTokens, isTokenExpired, getTokens, getAuthHeader } from "@/lib/auth/tokens"
+import { getUserProfile } from "./user-service";
 
 interface AuthResponse {
-  status: "success" | "error";
+  status?: 'success' | 'error';
   data?: {
     user: {
       _id: string;
-      username: string;
       email: string;
       firstName: string;
       lastName: string;
       department: string;
-      role: 'user' | 'admin' | 'trainer' | 'trainee';
+      role: 'Trainer' | 'Trainee';
+      lastLogin: string;
       isActive: boolean;
-      loginAttempts: number;
       createdAt: string;
       updatedAt: string;
-      lastLogin: string;
     };
     token: string;
     refreshToken: string;
-    expiresIn: string;
+    expiresIn: number;
   };
-  message?: string;
   error?: {
     code: string;
     message: string;
     details?: any;
   };
+  message?: string;
+}
+
+export type User = NonNullable<AuthResponse['data']>['user'];
+
+interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'Trainer' | 'Trainee';
+  createdAt: string;
 }
 
 interface LoginRequest {
@@ -43,105 +53,120 @@ interface ResetPasswordConfirmRequest {
   password: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
-
-async function refreshAccessToken(): Promise<AuthResponse> {
-  try {
-    const { refreshToken } = getTokens();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await fetch(`${API_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    const data = await response.json();
-    if (data.status === 'success' && data.data) {
-      setTokens({
-        token: data.data.token,
-        refreshToken: data.data.refreshToken,
-        expiresIn: parseInt(data.data.expiresIn),
-      });
-    }
-
-    return data;
-  } catch (error) {
-    removeTokens();
-    throw error;
-  }
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
 export async function login({ email, password }: LoginRequest): Promise<AuthResponse> {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/users/login`, {
       method: "POST",
+      credentials: 'include',
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: 'include',
       body: JSON.stringify({ email, password }),
     })
 
-    const data: AuthResponse = await response.json()
+    const data = await response.json()
 
-    if (data.status === "success" && data.data) {
-      // Store the token in cookie ourselves to ensure it's available for headers
+    if (response.ok && data.access_token) {
       setTokens({
-        token: data.data.token,
-        refreshToken: data.data.refreshToken,
-        expiresIn: data.data.expiresIn.includes('h') 
-          ? parseInt(data.data.expiresIn) * 3600 
-          : parseInt(data.data.expiresIn),
+        token: data.access_token,
+        refreshToken: data.refresh_token,
+        tokenType: data.token_type,
+        expiresIn: 3600 // Default to 1 hour if not provided
       })
+
+      // Fetch user profile after successful login
+      const userResponse = await getUserProfile()
+      
+      if (userResponse.status === "error" || !userResponse.data?.user) {
+        return {
+          status: 'error',
+          error: {
+            code: 'USER_001',
+            message: "Failed to fetch user profile"
+          }
+        }
+      }
+
+      return {
+        status: 'success',
+        data: {
+          user: userResponse.data.user,
+          token: data.access_token,
+          refreshToken: data.refresh_token,
+          expiresIn: 3600
+        }
+      }
     }
 
-    return data
+    return {
+      status: 'error',
+      error: {
+        code: 'AUTH_001',
+        message: "Invalid credentials"
+      }
+    }
   } catch (error) {
     return {
-      status: "error",
+      status: 'error',
       error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to connect to the server. Please try again.",
-      },
+        code: 'AUTH_999',
+        message: "Failed to connect to the server. Please try again."
+      }
     }
   }
 }
 
 export async function logout(): Promise<void> {
   try {
-    const { token } = getTokens();
-    if (!token) {
-      removeTokens();
-      return;
-    }
-
-    const response = await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeader(),
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Logout failed');
-    }
-
-    // Clear local storage and cookies even if the server request fails
+    // The new API might not require a logout endpoint
+    // Just remove tokens locally
     removeTokens();
   } catch (error) {
     console.error("Logout error:", error);
     // Always remove tokens on error to ensure user can log in again
     removeTokens();
-    throw error;
+  }
+}
+
+export async function getCurrentUser(): Promise<AuthResponse> {
+  try {
+    const response = await fetch(`${API_URL}/users/me`, {
+      headers: {
+        ...getAuthHeader()
+      }
+    });
+
+    if (!response.ok) {
+      return {
+        status: 'error',
+        error: {
+          code: 'USER_003',
+          message: 'User not found'
+        }
+      };
+    }
+
+    return await response.json();
+  } catch (error) {
+    return {
+      status: 'error',
+      error: {
+        code: 'USER_999',
+        message: 'Failed to fetch user profile'
+      }
+    };
+  }
+}
+
+// Function to check auth status
+export async function checkAuth(): Promise<boolean> {
+  try {
+    const user = await getCurrentUser();
+    return !!user;
+  } catch {
+    return false;
   }
 }
 
@@ -205,17 +230,4 @@ export async function confirmResetPassword({
       },
     }
   }
-}
-
-// Function to check auth status
-export async function checkAuth(): Promise<boolean> {
-  if (isTokenExpired()) {
-    try {
-      await refreshAccessToken();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  return true;
 } 

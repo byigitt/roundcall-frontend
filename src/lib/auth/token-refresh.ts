@@ -13,7 +13,7 @@ interface RefreshTokenResponse {
   }
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export async function refreshToken(): Promise<RefreshTokenResponse> {
   try {
@@ -29,7 +29,7 @@ export async function refreshToken(): Promise<RefreshTokenResponse> {
       }
     }
 
-    const response = await fetch(`${API_URL}/auth/refresh`, {
+    const response = await fetch(`${API_URL}/users/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

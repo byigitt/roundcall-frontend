@@ -1,43 +1,34 @@
 import { getTokens } from "./tokens"
 
 interface UserResponse {
-  status: "success" | "error";
-  data?: {
-    user: {
-      _id: string;
-      username: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      department: string;
-      role: 'user' | 'admin' | 'trainer' | 'trainee';
-      isActive: boolean;
-      lastLogin: string;
-    };
-  };
-  message?: string;
-  code?: string;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'Trainer' | 'Trainee';
+  department: string;
+  isActive: boolean;
+  lastLogin: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
-export async function getUserProfile(): Promise<UserResponse> {
+export async function getUserProfile(): Promise<{ status: "success" | "error", data?: { user: UserResponse }, error?: any }> {
   try {
     const { token } = getTokens();
     if (!token) {
       return {
         status: "error",
-        message: "No auth token found",
-        code: "AUTH_001"
+        error: {
+          code: "AUTH_001",
+          message: "No auth token found"
+        }
       };
     }
 
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(`${API_URL}/users/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -51,17 +42,37 @@ export async function getUserProfile(): Promise<UserResponse> {
     if (!response.ok) {
       return {
         status: "error",
-        message: data.message || "Failed to fetch user profile",
-        code: data.code || "USER_001"
+        error: {
+          code: "USER_001",
+          message: data.message || "Failed to fetch user profile"
+        }
       };
     }
 
-    return data;
+    return {
+      status: "success",
+      data: {
+        user: {
+          _id: data.id,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: data.role,
+          department: data.department,
+          isActive: true,
+          lastLogin: new Date().toISOString(),
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt
+        }
+      }
+    };
   } catch (error) {
     return {
       status: "error",
-      message: "Failed to fetch user profile",
-      code: "USER_001"
+      error: {
+        code: "USER_001",
+        message: "Failed to fetch user profile"
+      }
     };
   }
 } 

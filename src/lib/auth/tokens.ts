@@ -1,10 +1,11 @@
-interface Tokens {
-  token: string
-  refreshToken: string
-  expiresIn: number
+export interface Tokens {
+  token: string;
+  refreshToken: string;
+  tokenType?: string;
+  expiresIn?: number;
 }
 
-export function setTokens({ token, refreshToken, expiresIn }: Tokens) {
+export function setTokens({ token, refreshToken, tokenType, expiresIn = 3600 }: Tokens) {
   try {
     const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
     const refreshExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours

@@ -1,10 +1,6 @@
 import { z } from "zod"
 
 export const registerSchema = z.object({
-  username: z.string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be at most 20 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Only alphanumeric characters and underscore allowed"),
   email: z.string()
     .email("Invalid email address")
     .regex(/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/, "Invalid email format"),
@@ -26,10 +22,17 @@ export const registerSchema = z.object({
     .min(2, "Department must be at least 2 characters")
     .max(50, "Department must be at most 50 characters")
     .optional(),
-  role: z.enum(["admin", "user"])
+  role: z.enum(["Trainer", "Trainee"])
 })
 
-export type RegisterRequest = z.infer<typeof registerSchema>
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  department?: string;
+  role: "Trainer" | "Trainee";
+}
 
 interface RegisterResponse {
   status: "success" | "error"
@@ -54,11 +57,11 @@ interface RegisterResponse {
   }
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export async function register(data: RegisterRequest): Promise<RegisterResponse> {
   try {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_URL}/users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
