@@ -62,7 +62,7 @@ export async function createLesson(lesson: Lesson): Promise<ApiResponse<{ lesson
         status: "error",
         error: {
           code: data.error?.code || "LESSON_001",
-          message: data.error?.message || "Failed to create lesson",
+          message: data.message || "Failed to create lesson",
         },
       }
     }
@@ -108,7 +108,7 @@ export async function getLessons(params?: {
         status: "error",
         error: {
           code: data.error?.code || "LESSON_002",
-          message: data.error?.message || "Failed to fetch lessons",
+          message: data.message || "Failed to fetch lessons",
         },
       }
     }
@@ -138,7 +138,7 @@ export async function getLesson(id: string): Promise<ApiResponse<{ lesson: Lesso
         status: "error",
         error: {
           code: data.error?.code || "LESSON_003",
-          message: data.error?.message || "Failed to fetch lesson",
+          message: data.message || "Failed to fetch lesson",
         },
       }
     }
@@ -176,7 +176,7 @@ export async function updateLesson(
         status: "error",
         error: {
           code: data.error?.code || "LESSON_004",
-          message: data.error?.message || "Failed to update lesson",
+          message: data.message || "Failed to update lesson",
         },
       }
     }
@@ -207,7 +207,7 @@ export async function deleteLesson(id: string): Promise<ApiResponse<void>> {
         status: "error",
         error: {
           code: data.error?.code || "LESSON_005",
-          message: data.error?.message || "Failed to delete lesson",
+          message: data.message || "Failed to delete lesson",
         },
       }
     }
@@ -246,7 +246,7 @@ export async function addQuestion(
         status: "error",
         error: {
           code: data.error?.code || "QUESTION_001",
-          message: data.error?.message || "Failed to add question",
+          message: data.message || "Failed to add question",
         },
       }
     }
@@ -288,7 +288,7 @@ export async function updateQuestion(
         status: "error",
         error: {
           code: data.error?.code || "QUESTION_002",
-          message: data.error?.message || "Failed to update question",
+          message: data.message || "Failed to update question",
         },
       }
     }
@@ -325,7 +325,7 @@ export async function deleteQuestion(
         status: "error",
         error: {
           code: data.error?.code || "QUESTION_003",
-          message: data.error?.message || "Failed to delete question",
+          message: data.message || "Failed to delete question",
         },
       }
     }

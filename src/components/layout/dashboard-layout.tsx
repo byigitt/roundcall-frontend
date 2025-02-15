@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut } from "lucide-react"
+import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut, LineChart } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -28,7 +28,13 @@ const navigation = [
     title: "Performance",
     href: "/dashboard/performance",
     icon: <BarChart2 className="h-5 w-5" />,
-    roles: ["admin", "trainer", "trainee"]
+    roles: ["trainee"]
+  },
+  {
+    title: "Analytics",
+    href: "/dashboard/analytics",
+    icon: <LineChart className="h-5 w-5" />,
+    roles: ["admin", "trainer"]
   }
 ]
 
