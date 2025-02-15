@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut, LineChart, Users } from "lucide-react"
+import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut, LineChart, Users, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -16,31 +16,37 @@ const navigation = [
     title: "Manage",
     href: "/dashboard/manage",
     icon: <LayoutDashboard className="h-5 w-5" />,
-    roles: ["admin", "trainer"]
+    roles: ["Trainer"]
   },
   {
     title: "Trainees",
     href: "/dashboard/trainees",
     icon: <Users className="h-5 w-5" />,
-    roles: ["admin", "trainer"]
+    roles: ["Trainer"]
+  },
+  {
+    title: "Practice",
+    href: "/dashboard/practice",
+    icon: <GraduationCap className="h-5 w-5" />,
+    roles: ["Trainee"]
   },
   {
     title: "Lessons",
     href: "/dashboard/lessons",
-    icon: <GraduationCap className="h-5 w-5" />,
-    roles: ["trainee"]
+    icon: <BookOpen className="h-5 w-5" />,
+    roles: ["Trainee"]
   },
   {
     title: "Performance",
     href: "/dashboard/performance",
     icon: <BarChart2 className="h-5 w-5" />,
-    roles: ["trainee"]
+    roles: ["Trainee"]
   },
   {
     title: "Analytics",
     href: "/dashboard/analytics",
     icon: <LineChart className="h-5 w-5" />,
-    roles: ["admin", "trainer"]
+    roles: ["Trainer"]
   }
 ]
 
@@ -70,7 +76,11 @@ export default function DashboardLayout({
         if (token && !user) {
           const response = await getUserProfile()
           if (response.status === "success" && response.data) {
-            setUser(response.data.user)
+            const userData = {
+              ...response.data.user,
+              createdAt: response.data.user.lastLogin
+            }
+            setUser(userData)
           } else {
             clearUser()
             router.push('/signin')
