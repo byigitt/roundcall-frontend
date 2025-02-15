@@ -20,27 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Loader2, Search, Eye, Clock, HourglassIcon, Timer, CheckCircle2, AlertCircle } from "lucide-react"
-
-interface AssignedLesson {
-  _id: string
-  lesson: {
-    _id: string
-    title: string
-    description: string
-    contentType: string
-    difficulty: string
-  }
-  status: 'pending' | 'in_progress' | 'completed' | 'expired'
-  progress: number
-  startedAt: string
-  lastAccessedAt: string
-  dueDate?: string
-}
+import { Lesson, LessonStatus } from "@/lib/services/lesson-service"
 
 interface LessonListProps {
-  lessons: AssignedLesson[]
+  lessons: Lesson[]
   isLoading: boolean
-  onView: (lesson: AssignedLesson) => void
+  onView: (lesson: Lesson) => void
 }
 
 export function LessonList({
@@ -49,42 +34,38 @@ export function LessonList({
   onView,
 }: LessonListProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<LessonStatus | "all">("all")
 
   const filteredLessons = lessons.filter(lesson => {
     const matchesSearch = 
-      lesson.lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lesson.lesson.description.toLowerCase().includes(searchTerm.toLowerCase())
+      lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lesson.description.toLowerCase().includes(searchTerm.toLowerCase())
 
     if (statusFilter === "all") return matchesSearch
     return matchesSearch && lesson.status === statusFilter
   })
 
-  function getStatusColor(status: AssignedLesson['status']) {
+  function getStatusColor(status: LessonStatus) {
     switch (status) {
-      case 'pending':
+      case 'Assigned':
         return 'secondary'
-      case 'in_progress':
+      case 'In Progress':
         return 'default'
-      case 'completed':
+      case 'Completed':
         return 'default'
-      case 'expired':
-        return 'destructive'
       default:
         return 'secondary'
     }
   }
 
-  function getStatusIcon(status: AssignedLesson['status']) {
+  function getStatusIcon(status: LessonStatus) {
     switch (status) {
-      case 'pending':
+      case 'Assigned':
         return <HourglassIcon className="h-3 w-3" />
-      case 'in_progress':
+      case 'In Progress':
         return <Timer className="h-3 w-3" />
-      case 'completed':
+      case 'Completed':
         return <CheckCircle2 className="h-3 w-3" />
-      case 'expired':
-        return <AlertCircle className="h-3 w-3" />
       default:
         return null
     }
@@ -109,17 +90,16 @@ export function LessonList({
           </div>
           <Select
             value={statusFilter}
-            onValueChange={setStatusFilter}
+            onValueChange={(value) => setStatusFilter(value as LessonStatus | "all")}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="Assigned">Assigned</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -137,49 +117,54 @@ export function LessonList({
           <div className="space-y-4">
             {filteredLessons.map((lesson) => (
               <div
-                key={lesson._id}
-                className="flex items-start justify-between p-4 rounded-lg border"
+                key={lesson.id}
+                className="flex items-start justify-between p-4 rounded-lg border hover:border-primary hover:shadow-sm transition-all cursor-pointer"
+                onClick={() => onView(lesson)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onView(lesson)
+                  }
+                }}
               >
-                <div className="space-y-1 flex-1">
+                <div className="space-y-4 w-full">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium">{lesson.lesson.title}</div>
-                    <Badge variant={getStatusColor(lesson.status)} className="capitalize">
-                      <div className="flex items-center gap-1.5">
-                        {getStatusIcon(lesson.status)}
-                        <span>{lesson.status.replace('_', ' ')}</span>
-                      </div>
-                    </Badge>
+                    <div className="font-medium">{lesson.title}</div>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <Badge variant="outline">
-                      {lesson.lesson.contentType}
+                      {lesson.contentType}
                     </Badge>
-                    <Badge variant="secondary">
-                      {lesson.lesson.difficulty}
-                    </Badge>
+                    {lesson.timeBased && (
+                      <Badge variant="secondary">
+                        {lesson.timeBased} minutes
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      Started {new Date(lesson.startedAt).toLocaleDateString()}
-                    </div>
-                    {lesson.dueDate && (
+                    {lesson.createdAt && (
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Due {new Date(lesson.dueDate).toLocaleDateString()}
+                        Created {new Date(lesson.createdAt).toLocaleDateString()}
                       </div>
                     )}
                   </div>
-                  <div className="mt-2 space-y-1">
-                    <Progress value={lesson.progress} className="h-2" />
-                    <div className="text-xs text-right text-muted-foreground">
-                      {lesson.progress}% complete
+                  {lesson.progress !== undefined && (
+                    <div className="mt-2 space-y-1">
+                      <Progress value={lesson.progress} className="h-2" />
+                      <div className="text-xs text-right text-muted-foreground">
+                        {lesson.progress}% complete
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onView(lesson)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onView(lesson)
+                  }}
                   className="ml-4"
                 >
                   <Eye className="h-4 w-4" />
