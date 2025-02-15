@@ -93,7 +93,7 @@ export default function SignInPage() {
           toast({
             variant: "destructive",
             title: "Error",
-            description: response.error?.message || "Invalid email or password.",
+            description: response.message || "Invalid error.",
           })
         }
       } catch (error) {
