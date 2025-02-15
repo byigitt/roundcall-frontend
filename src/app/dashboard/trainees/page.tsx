@@ -5,46 +5,15 @@ import { useToast } from "@/hooks/use-toast"
 import { getAuthHeader } from "@/lib/auth/tokens"
 import { TraineeList } from "./trainee-list"
 import { TraineeDetails } from "./trainee-details"
+import { Trainee } from "@/lib/types/trainee"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
-
-interface TraineeWithLessons {
-  _id: string
-  username: string
-  email: string
-  firstName: string
-  lastName: string
-  role: string
-  lessons: {
-    _id: string
-    lesson: {
-      _id: string
-      title: string
-      contentType: string
-      difficulty: string
-    }
-    status: 'pending' | 'in_progress' | 'completed' | 'expired'
-    progress: number
-    startedAt: string
-    lastAccessedAt: string
-    dueDate?: string
-  }[]
-  stats: {
-    totalAssigned: number
-    completed: number
-    inProgress: number
-    pending: number
-    expired: number
-    averageProgress: number
-  }
-  lastActivity: string
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export default function TraineesPage() {
   const { toast } = useToast()
-  const [trainees, setTrainees] = useState<TraineeWithLessons[]>([])
+  const [trainees, setTrainees] = useState<Trainee[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedTrainee, setSelectedTrainee] = useState<TraineeWithLessons | null>(null)
+  const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
@@ -53,7 +22,7 @@ export default function TraineesPage() {
 
   async function fetchTrainees() {
     try {
-      const response = await fetch(`${API_URL}/users/my-trainees/lessons`, {
+      const response = await fetch(`${API_URL}/users/assigned-trainees`, {
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeader()
@@ -62,8 +31,23 @@ export default function TraineesPage() {
       })
 
       const data = await response.json()
-      if (data.status === "success") {
-        setTrainees(data.data.trainees)
+      if (Array.isArray(data)) {
+        // Map API response to match our Trainee type
+        const mappedTrainees: Trainee[] = data.map(trainee => ({
+          ...trainee,
+          stats: {
+            totalAssigned: trainee.totalAssignedLessons,
+            completed: trainee.completedLessons,
+            inProgress: trainee.inProgressLessons,
+            pending: trainee.notStartedLessons,
+            expired: 0,
+            averageProgress: trainee.completionRate
+          },
+          role: trainee.role || 'Trainee',
+          lessons: trainee.lessons || [],
+          lastActivity: trainee.lastActivity || new Date().toISOString()
+        }))
+        setTrainees(mappedTrainees)
       } else {
         toast({
           variant: "destructive",

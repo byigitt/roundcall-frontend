@@ -21,41 +21,10 @@ import {
   Timer,
   HourglassIcon
 } from "lucide-react"
-
-interface TraineeWithLessons {
-  _id: string
-  username: string
-  email: string
-  firstName: string
-  lastName: string
-  role: string
-  lessons: {
-    _id: string
-    lesson: {
-      _id: string
-      title: string
-      contentType: string
-      difficulty: string
-    }
-    status: 'pending' | 'in_progress' | 'completed' | 'expired'
-    progress: number
-    startedAt: string
-    lastAccessedAt: string
-    dueDate?: string
-  }[]
-  stats: {
-    totalAssigned: number
-    completed: number
-    inProgress: number
-    pending: number
-    expired: number
-    averageProgress: number
-  }
-  lastActivity: string
-}
+import { Trainee } from "@/lib/types/trainee"
 
 interface TraineeDetailsProps {
-  trainee: TraineeWithLessons | null
+  trainee: Trainee | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -191,7 +160,7 @@ export function TraineeDetails({
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-4">
                         <Badge 
                           variant={getStatusColor(lesson.status)}
                           className="capitalize flex items-center gap-1"

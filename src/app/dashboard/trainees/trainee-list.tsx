@@ -28,43 +28,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Search, Eye, BarChart2, Clock } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-
-interface TraineeWithLessons {
-  _id: string
-  username: string
-  email: string
-  firstName: string
-  lastName: string
-  role: string
-  lessons: {
-    _id: string
-    lesson: {
-      _id: string
-      title: string
-      contentType: string
-      difficulty: string
-    }
-    status: 'pending' | 'in_progress' | 'completed' | 'expired'
-    progress: number
-    startedAt: string
-    lastAccessedAt: string
-    dueDate?: string
-  }[]
-  stats: {
-    totalAssigned: number
-    completed: number
-    inProgress: number
-    pending: number
-    expired: number
-    averageProgress: number
-  }
-  lastActivity: string
-}
+import { Trainee } from "@/lib/types/trainee"
 
 interface TraineeListProps {
-  trainees: TraineeWithLessons[]
+  trainees: Trainee[]
   isLoading: boolean
-  onView: (trainee: TraineeWithLessons) => void
+  onView: (trainee: Trainee) => void
 }
 
 export function TraineeList({
@@ -83,29 +52,17 @@ export function TraineeList({
 
     if (statusFilter === "all") return matchesSearch
 
-    const hasLessonsWithStatus = trainee.lessons.some(lesson => 
-      statusFilter === "active" 
-        ? lesson.status === "in_progress"
-        : lesson.status === statusFilter
-    )
-
-    return matchesSearch && hasLessonsWithStatus
-  })
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'completed':
-        return 'default'
-      case 'in_progress':
-        return 'default'
-      case 'pending':
-        return 'secondary'
-      case 'expired':
-        return 'destructive'
+    switch (statusFilter) {
+      case "active":
+        return matchesSearch && trainee.stats.inProgress > 0
+      case "completed":
+        return matchesSearch && trainee.stats.completed === trainee.stats.totalAssigned
+      case "pending":
+        return matchesSearch && trainee.stats.pending > 0
       default:
-        return 'secondary'
+        return matchesSearch
     }
-  }
+  })
 
   return (
     <Card>
@@ -136,7 +93,6 @@ export function TraineeList({
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -158,13 +114,12 @@ export function TraineeList({
                 <TableHead>Assigned Lessons</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Last Activity</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTrainees.map((trainee) => (
-                <TableRow key={trainee._id}>
+                <TableRow key={trainee.id}>
                   <TableCell>
                     <div>
                       <div className="font-medium">
@@ -199,25 +154,18 @@ export function TraineeList({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {trainee.lessons.length > 0 ? (
-                        trainee.lessons.slice(0, 2).map((lesson) => (
-                          <Badge 
-                            key={lesson._id}
-                            variant={getStatusColor(lesson.status)}
-                            className="capitalize"
-                          >
-                            {lesson.status.replace('_', ' ')}
-                          </Badge>
-                        ))
-                      ) : (
+                      {trainee.stats.inProgress > 0 && (
+                        <Badge variant="default">Active</Badge>
+                      )}
+                      {trainee.stats.completed === trainee.stats.totalAssigned && trainee.stats.totalAssigned > 0 && (
+                        <Badge variant="default">Completed</Badge>
+                      )}
+                      {trainee.stats.pending > 0 && (
+                        <Badge variant="secondary">Pending</Badge>
+                      )}
+                      {trainee.stats.totalAssigned === 0 && (
                         <Badge variant="secondary">No lessons</Badge>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {new Date(trainee.lastActivity).toLocaleDateString()}
                     </div>
                   </TableCell>
                   <TableCell>
