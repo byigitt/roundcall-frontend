@@ -13,10 +13,35 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Mail, Loader2, X, UserPlus, Users, Clock, BarChart } from "lucide-react"
+import { Mail, Loader2, X, UserPlus, Users, Clock, BarChart, HourglassIcon, Timer, CheckCircle2, AlertCircle } from "lucide-react"
 import { Lesson } from "./types"
 import { useToast } from "@/hooks/use-toast"
 import { getAuthHeader } from "@/lib/auth/tokens"
+
+interface TraineeLesson {
+  _id: string
+  lesson: {
+    _id: string
+    title: string
+    contentType: string
+    difficulty: string
+  }
+  status: 'pending' | 'in_progress' | 'completed' | 'expired'
+  progress: number
+  startedAt: string
+  lastAccessedAt: string
+  dueDate?: string
+}
+
+interface TraineeWithLessons {
+  _id: string
+  username: string
+  email: string
+  firstName: string
+  lastName: string
+  role: string
+  lessons: TraineeLesson[]
+}
 
 interface AssignedTrainee {
   _id: string
@@ -65,7 +90,7 @@ export function AssignLessonDialog({
     
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/assigned-lessons/${lesson._id}/trainees`, {
+      const response = await fetch(`${API_URL}/users/my-trainees/lessons?lessonId=${lesson._id}`, {
         headers: {
           ...getAuthHeader()
         },
@@ -73,7 +98,30 @@ export function AssignLessonDialog({
       })
       const data = await response.json()
       if (data.status === "success") {
-        setAssignedTrainees(data.data.assignments)
+        const lessonTrainees = data.data.trainees
+          .filter((trainee: TraineeWithLessons) => 
+            trainee.lessons.some((l: TraineeLesson) => l.lesson._id === lesson._id)
+          )
+          .map((trainee: TraineeWithLessons) => {
+            const lessonAssignment = trainee.lessons.find((l: TraineeLesson) => l.lesson._id === lesson._id)
+            return {
+              _id: lessonAssignment?._id || '',
+              lesson: lesson._id,
+              trainee: {
+                _id: trainee._id,
+                email: trainee.email,
+                firstName: trainee.firstName,
+                lastName: trainee.lastName
+              },
+              assignedBy: '',
+              status: lessonAssignment?.status || 'pending',
+              progress: lessonAssignment?.progress || 0,
+              dueDate: lessonAssignment?.dueDate,
+              createdAt: lessonAssignment?.startedAt || '',
+              updatedAt: lessonAssignment?.lastAccessedAt || ''
+            }
+          })
+        setAssignedTrainees(lessonTrainees)
       }
     } catch (error) {
       console.error('Error fetching assigned trainees:', error)
@@ -119,7 +167,7 @@ export function AssignLessonDialog({
         toast({
           variant: "destructive",
           title: "Error",
-          description: data.error?.message || "Failed to assign lesson"
+          description: data.message || "Failed to assign lesson"
         })
       }
     } catch (error) {
@@ -158,7 +206,7 @@ export function AssignLessonDialog({
         toast({
           variant: "destructive",
           title: "Error",
-          description: data.error?.message || "Failed to remove assignment"
+          description: data.message || "Failed to remove assignment"
         })
       }
     } catch (error) {
@@ -185,6 +233,21 @@ export function AssignLessonDialog({
         return 'destructive'
       default:
         return 'secondary'
+    }
+  }
+
+  function getStatusIcon(status: AssignedTrainee['status']) {
+    switch (status) {
+      case 'pending':
+        return <HourglassIcon className="h-3 w-3" />
+      case 'in_progress':
+        return <Timer className="h-3 w-3" />
+      case 'completed':
+        return <CheckCircle2 className="h-3 w-3" />
+      case 'expired':
+        return <AlertCircle className="h-3 w-3" />
+      default:
+        return null
     }
   }
 
@@ -258,7 +321,10 @@ export function AssignLessonDialog({
                               {assignment.trainee.firstName} {assignment.trainee.lastName}
                             </p>
                             <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-                              {assignment.status}
+                              <div className="flex items-center gap-1.5">
+                                {getStatusIcon(assignment.status)}
+                                <span>{assignment.status.replace('_', ' ')}</span>
+                              </div>
                             </Badge>
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">

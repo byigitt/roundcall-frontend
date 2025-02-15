@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,7 @@ interface CreateLessonFormProps {
 export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps) {
   const form = useForm<LessonFormValues>({
     resolver: zodResolver(lessonSchema),
+    mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
@@ -42,7 +43,7 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
       textContent: "",
       videoUrl: "",
       duration: 0,
-      displayTime: 10000, // 10 seconds default
+      displayTime: 10000,
       difficulty: "beginner",
       tags: [],
       questions: [
@@ -55,6 +56,41 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
     }
   })
 
+  const contentType = form.watch("contentType")
+
+  // Reset dependent fields when content type changes
+  useEffect(() => {
+    if (contentType === "text" || contentType === "timed_text") {
+      form.setValue("videoUrl", "", { shouldValidate: true })
+      form.setValue("duration", 0, { shouldValidate: true })
+    }
+    if (contentType !== "timed_text") {
+      form.setValue("displayTime", 10000, { shouldValidate: true })
+    }
+    if (contentType === "video") {
+      form.setValue("textContent", "", { shouldValidate: true })
+    }
+    
+    // Trigger validation after changing content type
+    form.trigger()
+  }, [contentType, form])
+
+  // Add debug information with more details
+  const formState = form.formState
+  const values = form.getValues()
+  console.log('Form Values:', values)
+  console.log('Form Errors:', formState.errors)
+  console.log('Is Form Valid:', formState.isValid)
+  console.log('Is Form Submitting:', formState.isSubmitting)
+  console.log('Is Form Dirty:', formState.isDirty)
+  console.log('Form State:', {
+    isValidating: formState.isValidating,
+    isSubmitted: formState.isSubmitted,
+    submitCount: formState.submitCount,
+    touchedFields: formState.touchedFields,
+    dirtyFields: formState.dirtyFields
+  })
+
   const addQuestion = () => {
     const questions = form.getValues("questions")
     form.setValue("questions", [
@@ -64,25 +100,79 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
         options: ["", ""],
         correctAnswer: 0
       }
-    ])
+    ], { shouldValidate: true })
   }
 
   const removeQuestion = (index: number) => {
     const questions = form.getValues("questions")
-    form.setValue("questions", questions.filter((_, i) => i !== index))
+    if (questions.length <= 1) return // Don't remove if it's the last question
+    form.setValue("questions", questions.filter((_, i) => i !== index), { shouldValidate: true })
   }
 
   const addOption = (questionIndex: number) => {
     const questions = form.getValues("questions")
     const question = questions[questionIndex]
-    form.setValue(`questions.${questionIndex}.options`, [...question.options, ""])
+    form.setValue(`questions.${questionIndex}.options`, [...question.options, ""], { shouldValidate: true })
   }
 
-  const contentType = form.watch("contentType")
+  const removeTag = (index: number) => {
+    const tags = form.getValues("tags")
+    form.setValue("tags", tags.filter((_, i) => i !== index), { shouldValidate: true })
+  }
+
+  const removeOption = (questionIndex: number, optionIndex: number) => {
+    const questions = form.getValues("questions")
+    const question = questions[questionIndex]
+    
+    // Don't remove if there are only 2 options
+    if (question.options.length <= 2) return
+    
+    // If removing the correct answer, set it to the first option
+    if (question.correctAnswer === optionIndex) {
+      form.setValue(`questions.${questionIndex}.correctAnswer`, 0, { shouldValidate: true })
+    }
+    // If removing an option before the correct answer, adjust the correct answer index
+    else if (optionIndex < question.correctAnswer) {
+      form.setValue(`questions.${questionIndex}.correctAnswer`, question.correctAnswer - 1, { shouldValidate: true })
+    }
+    
+    const newOptions = question.options.filter((_, i) => i !== optionIndex)
+    form.setValue(`questions.${questionIndex}.options`, newOptions, { shouldValidate: true })
+  }
+
+  const handleSubmit = async (data: LessonFormValues) => {
+    try {
+      // Log the data being submitted
+      console.log('Submitting data:', data)
+
+      const submissionData = { ...data } as Partial<LessonFormValues>
+
+      // Remove videoUrl and duration if not needed
+      if (data.contentType === "text" || data.contentType === "timed_text") {
+        delete submissionData.videoUrl
+        delete submissionData.duration
+      }
+
+      // Remove displayTime if not needed
+      if (data.contentType !== "timed_text") {
+        delete submissionData.displayTime
+      }
+
+      // Filter out empty tags
+      submissionData.tags = data.tags.filter(tag => tag.trim() !== "")
+
+      await onSubmit(submissionData as LessonFormValues)
+      
+      // Reset form after successful submission
+      form.reset()
+    } catch (error) {
+      console.error('Form submission error:', error)
+    }
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>Lesson Details</CardTitle>
@@ -143,42 +233,42 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="contentType"
+                          id="text"
                           value="text"
                           checked={field.value === "text"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label>Regular Text</Label>
+                        <Label htmlFor="text">Regular Text</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="contentType"
+                          id="timed_text"
                           value="timed_text"
                           checked={field.value === "timed_text"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label>Timed Text</Label>
+                        <Label htmlFor="timed_text">Timed Text</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="contentType"
+                          id="video"
                           value="video"
                           checked={field.value === "video"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label>Video</Label>
+                        <Label htmlFor="video">Video</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="contentType"
+                          id="both"
                           value="both"
                           checked={field.value === "both"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label>Both</Label>
+                        <Label htmlFor="both">Both</Label>
                       </div>
                     </div>
                   </FormControl>
@@ -211,6 +301,9 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Content must be at least 50 characters. Current length: {field.value.length}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -377,7 +470,18 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                   <FormItem>
                     <FormLabel>Tag {index + 1}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter tag" {...field} />
+                      <div className="flex items-center gap-2">
+                        <Input placeholder="Enter tag" {...field} />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeTag(index)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -441,14 +545,26 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <div className="flex items-center space-x-2">
-                              <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
-                              <input
-                                type="radio"
-                                name={`correctAnswer-${questionIndex}`}
-                                checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
-                                onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
-                              />
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                                <input
+                                  type="radio"
+                                  name={`correctAnswer-${questionIndex}`}
+                                  checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
+                                  onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeOption(questionIndex, optionIndex)}
+                                className="h-8 w-8"
+                                disabled={question.options.length <= 2}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -480,9 +596,13 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isPending || !formState.isValid || formState.isSubmitting}
+        >
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Lesson
+          {isPending ? "Creating..." : "Create Lesson"}
         </Button>
       </form>
     </Form>

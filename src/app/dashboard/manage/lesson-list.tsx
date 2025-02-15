@@ -89,7 +89,7 @@ export function LessonList({
         toast({
           variant: "destructive",
           title: "Error",
-          description: data.error?.message || "Failed to delete lesson"
+          description: data.message || "Failed to delete lesson"
         })
       }
     } catch (error) {

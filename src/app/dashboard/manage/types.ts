@@ -5,7 +5,10 @@ export const lessonSchema = z.object({
   description: z.string().min(20, "Description must be between 20 and 1000 characters"),
   contentType: z.enum(["text", "timed_text", "video", "both"]),
   textContent: z.string().min(50, "Content must be at least 50 characters"),
-  videoUrl: z.string().url("Invalid video URL").optional(),
+  videoUrl: z.union([
+    z.string().url("Invalid video URL"),
+    z.string().length(0)
+  ]),
   duration: z.number().optional(), // in seconds for video content
   displayTime: z.number().min(5000).max(300000).optional(), // 5-300 seconds in milliseconds
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
@@ -17,6 +20,15 @@ export const lessonSchema = z.object({
       correctAnswer: z.number().min(0)
     })
   ).min(1, "At least one question is required")
+}).refine((data) => {
+  // Validate videoUrl only when content type is video or both
+  if (data.contentType === "video" || data.contentType === "both") {
+    return data.videoUrl.length > 0 && z.string().url().safeParse(data.videoUrl).success;
+  }
+  return true;
+}, {
+  message: "Video URL is required for video content",
+  path: ["videoUrl"]
 })
 
 export type LessonFormValues = z.infer<typeof lessonSchema>
