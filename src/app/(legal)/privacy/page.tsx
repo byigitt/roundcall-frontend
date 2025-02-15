@@ -41,7 +41,7 @@ export default function PrivacyPage() {
               </p>
 
               <ul className="list-disc pl-6">
-                <li>Account information (username, email, name)</li>
+                <li>Account information (email, name)</li>
                 <li>Training session data and performance metrics</li>
                 <li>Usage statistics and interaction data</li>
                 <li>Technical information for service improvement</li>

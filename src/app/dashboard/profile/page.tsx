@@ -25,6 +25,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2, User, Mail, AtSign, Shield, Clock } from "lucide-react"
 import { useUserStore } from "@/lib/store/use-user-store"
 import { Separator } from "@/components/ui/separator"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getInitials } from "@/lib/utils"
+import { formatDate } from "@/lib/utils"
 
 const profileFormSchema = z.object({
   firstName: z.string()
@@ -114,34 +117,35 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4 px-4 py-2 bg-muted rounded-lg">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
+            <div className="grid gap-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={user.avatarUrl} />
+                    <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="text-2xl font-bold">{`${user.firstName} ${user.lastName}`}</h2>
+                    <p className="text-sm text-muted-foreground">{user.role}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-4 px-4 py-2 bg-muted rounded-lg">
-              <AtSign className="h-5 w-5 text-muted-foreground" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Username</p>
-                <p className="text-sm text-muted-foreground">{user.username}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 px-4 py-2 bg-muted rounded-lg">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Role</p>
-                <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 px-4 py-2 bg-muted rounded-lg">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Last Login</p>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(user.lastLogin).toLocaleString()}
-                </p>
+              <Separator className="my-4" />
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </div>
+                {user.department && (
+                  <div className="grid gap-2">
+                    <p className="text-sm font-medium">Department</p>
+                    <p className="text-sm text-muted-foreground">{user.department}</p>
+                  </div>
+                )}
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Member Since</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</p>
+                </div>
               </div>
             </div>
           </CardContent>

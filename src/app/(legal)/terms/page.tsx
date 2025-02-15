@@ -40,11 +40,10 @@ export default function TermsPage() {
                 By creating an account on RoundCall, you agree to:
               </p>
 
-              <ul className="list-disc pl-6">
-                <li>Provide accurate and complete registration information</li>
-                <li>Username must be 3-20 characters, alphanumeric and underscores only</li>
-                <li>Email must be valid and unique</li>
-                <li>Password must be at least 8 characters with uppercase, lowercase, number, and special character</li>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Password must be at least 8 characters long</li>
+                <li>Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character</li>
+                <li>Email must be a valid email address</li>
                 <li>Maintain the security of your account credentials</li>
                 <li>Notify us immediately of any unauthorized access</li>
                 <li>Take responsibility for all activities under your account</li>
