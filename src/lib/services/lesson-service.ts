@@ -1,7 +1,7 @@
 import { getAuthHeader } from "@/lib/auth/tokens"
 import * as z from "zod"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
 
 // Validation schemas
 export const lessonSchema = z.object({

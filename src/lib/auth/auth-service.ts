@@ -43,7 +43,7 @@ interface ResetPasswordConfirmRequest {
   password: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
 
 async function refreshAccessToken(): Promise<AuthResponse> {
   try {

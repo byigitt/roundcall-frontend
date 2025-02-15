@@ -54,7 +54,7 @@ interface RegisterResponse {
   }
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
 
 export async function register(data: RegisterRequest): Promise<RegisterResponse> {
   try {
