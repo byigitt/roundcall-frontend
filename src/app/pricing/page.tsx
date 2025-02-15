@@ -297,22 +297,22 @@ export default function PricingPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <section className="py-20 px-4 bg-primary dark:bg-black text-white">
           <div className="container mx-auto text-center max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
               Ready to Transform Your Call Center Training?
             </h2>
-            <p className="text-lg mb-8 text-primary-foreground/90">
+            <p className="text-lg mb-8 text-white/90">
               Start your 14-day free trial today. No credit card required.
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
               <Link href="/signup">
-                <Button size="lg" variant="secondary" className="gap-2">
+                <Button size="lg" variant="secondary" className="gap-2 text-black dark:text-white">
                   Start Free Trial
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button size="lg" variant="outline" className="text-black border-primary-foreground">
+                <Button size="lg" variant="secondary" className="gap-2 text-black dark:text-white">
                   Contact Sales
                 </Button>
               </Link>
