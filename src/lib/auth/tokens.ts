@@ -5,17 +5,28 @@ interface Tokens {
 }
 
 export function setTokens({ token, refreshToken, expiresIn }: Tokens) {
-  // Set HTTP-only cookies with secure settings
-  const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
-  const refreshExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-  document.cookie = `token=${token}; path=/; expires=${tokenExpiry.toUTCString()}; SameSite=Strict`;
-  document.cookie = `refreshToken=${refreshToken}; path=/; expires=${refreshExpiry.toUTCString()}; SameSite=Strict`;
+  try {
+    const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
+    const refreshExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const cookieOptions = `path=/; SameSite=Lax; ${location.protocol === 'https:' ? 'Secure;' : ''}`;
+    
+    // Set both token and refreshToken
+    document.cookie = `token=${token}; expires=${tokenExpiry.toUTCString()}; ${cookieOptions}`;
+    document.cookie = `refreshToken=${refreshToken}; expires=${refreshExpiry.toUTCString()}; ${cookieOptions}`;
+  } catch (error) {
+    console.error('Error setting auth tokens:', error);
+    throw new Error('Failed to set authentication tokens');
+  }
 }
 
 export function removeTokens() {
-  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  try {
+    const cookieOptions = `path=/; SameSite=Lax; ${location.protocol === 'https:' ? 'Secure;' : ''}`;
+    document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; ${cookieOptions}`;
+    document.cookie = `refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; ${cookieOptions}`;
+  } catch (error) {
+    console.error('Error removing auth tokens:', error);
+  }
 }
 
 function getCookie(name: string): string | undefined {
@@ -28,9 +39,12 @@ function getCookie(name: string): string | undefined {
 }
 
 export function getTokens(): Partial<Tokens> {
+  const token = getCookie('token');
+  const refreshToken = getCookie('refreshToken');
+  
   return {
-    token: getCookie('token'),
-    refreshToken: getCookie('refreshToken')
+    token,
+    refreshToken
   };
 }
 

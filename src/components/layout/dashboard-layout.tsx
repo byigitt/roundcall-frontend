@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useUserStore } from "@/lib/store/use-user-store"
 import { logout } from "@/lib/auth/auth-service"
+import { getUserProfile } from "@/lib/auth/user-service"
+import { getTokens, isTokenExpired } from "@/lib/auth/tokens"
 
 const navigation = [
   {
@@ -37,14 +39,42 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, isLoading, clearUser } = useUserStore()
+  const { user, isLoading, setUser, setLoading, clearUser } = useUserStore()
 
   useEffect(() => {
-    // Only redirect if we're done loading and there's no user
-    if (!isLoading && !user) {
-      router.push('/signin')
+    const checkAuthAndLoadUser = async () => {
+      try {
+        setLoading(true)
+        const { token } = getTokens()
+        
+        // If no token or token is expired, redirect to signin
+        if (!token || isTokenExpired()) {
+          clearUser()
+          router.push('/signin')
+          return
+        }
+
+        // If we have a token but no user, fetch the user profile
+        if (token && !user) {
+          const response = await getUserProfile()
+          if (response.status === "success" && response.data) {
+            setUser(response.data.user)
+          } else {
+            clearUser()
+            router.push('/signin')
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error)
+        clearUser()
+        router.push('/signin')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [user, isLoading, router])
+
+    checkAuthAndLoadUser()
+  }, [user, router, setUser, setLoading, clearUser])
 
   // Filter navigation items based on user role
   const filteredNavigation = navigation.filter(item => 
@@ -52,9 +82,16 @@ export default function DashboardLayout({
   )
 
   const handleLogout = async () => {
-    await logout()
-    clearUser()
-    router.push('/signin')
+    try {
+      await logout()
+      clearUser()
+      router.push('/signin')
+    } catch (error) {
+      console.error('Error logging out:', error)
+      // Still clear user and redirect even if logout fails
+      clearUser()
+      router.push('/signin')
+    }
   }
 
   // Show loading state while checking authentication

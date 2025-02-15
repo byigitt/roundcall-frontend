@@ -91,15 +91,13 @@ export async function login({ email, password }: LoginRequest): Promise<AuthResp
     const data: AuthResponse = await response.json()
 
     if (data.status === "success" && data.data) {
-      // Convert expiresIn from "1h" to seconds
-      const expiresIn = data.data.expiresIn.includes('h') 
-        ? parseInt(data.data.expiresIn) * 3600 
-        : parseInt(data.data.expiresIn);
-
+      // Store the token in cookie ourselves to ensure it's available for headers
       setTokens({
         token: data.data.token,
         refreshToken: data.data.refreshToken,
-        expiresIn,
+        expiresIn: data.data.expiresIn.includes('h') 
+          ? parseInt(data.data.expiresIn) * 3600 
+          : parseInt(data.data.expiresIn),
       })
     }
 
@@ -117,6 +115,12 @@ export async function login({ email, password }: LoginRequest): Promise<AuthResp
 
 export async function logout(): Promise<void> {
   try {
+    const { token } = getTokens();
+    if (!token) {
+      removeTokens();
+      return;
+    }
+
     const response = await fetch(`${API_URL}/auth/logout`, {
       method: "POST",
       headers: {
@@ -124,15 +128,20 @@ export async function logout(): Promise<void> {
         ...getAuthHeader(),
       },
       credentials: 'include',
-    })
+    });
 
     if (!response.ok) {
-      throw new Error('Logout failed');
+      const data = await response.json();
+      throw new Error(data.message || 'Logout failed');
     }
+
+    // Clear local storage and cookies even if the server request fails
+    removeTokens();
   } catch (error) {
-    console.error("Logout error:", error)
-  } finally {
-    removeTokens()
+    console.error("Logout error:", error);
+    // Always remove tokens on error to ensure user can log in again
+    removeTokens();
+    throw error;
   }
 }
 
