@@ -1,109 +1,131 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { useState, useTransition, useEffect } from "react"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { useUserStore } from "@/lib/store/use-user-store"
+import { getAuthHeader } from "@/lib/auth/tokens"
+import { Lesson, User } from "./types"
+import { LessonList } from "./lesson-list"
+import { ViewLessonDialog } from "./view-lesson-dialog"
+import { EditLessonDialog } from "./edit-lesson-dialog"
+import { AssignLessonDialog } from "./assign-lesson-dialog"
+import { CreateLessonForm } from "./create-lesson-form"
 
-const lessonSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  content: z.string().min(50, "Content must be at least 50 characters"),
-  questions: z.array(z.object({
-    questionText: z.string().min(10, "Question must be at least 10 characters"),
-    options: z.array(z.string().min(1, "Option cannot be empty")).min(2, "At least 2 options required"),
-    correctAnswer: z.number().min(0)
-  }))
-})
-
-type LessonFormValues = z.infer<typeof lessonSchema>
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
 
 export default function ManagePage() {
   const { toast } = useToast()
+  const { user } = useUserStore()
   const [isPending, startTransition] = useTransition()
+  const [lessons, setLessons] = useState<Lesson[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [trainees, setTrainees] = useState<User[]>([])
 
-  const form = useForm<LessonFormValues>({
-    resolver: zodResolver(lessonSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-      questions: [
-        {
-          questionText: "",
-          options: ["", ""],
-          correctAnswer: 0
-        }
-      ]
-    }
-  })
+  useEffect(() => {
+    fetchLessons()
+  }, [])
 
-  function onSubmit(data: LessonFormValues) {
-    startTransition(async () => {
+  useEffect(() => {
+    async function fetchTrainees() {
       try {
-        // TODO: Implement API call
-        console.log(data)
-        toast({
-          title: "Success",
-          description: "Lesson created successfully",
+        const response = await fetch(`${API_URL}/users/my-trainees`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader()
+          },
+          credentials: 'include',
         })
-        form.reset()
+
+        const data = await response.json()
+        if (data.status === "success") {
+          setTrainees(data.data.trainees)
+        }
       } catch (error) {
+        console.error('Error fetching trainees:', error)
+      }
+    }
+
+    if (user?.role === 'trainer') {
+      fetchTrainees()
+    }
+  }, [user])
+
+  async function fetchLessons() {
+    try {
+      const response = await fetch(`${API_URL}/lessons`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader()
+        },
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+      if (data.status === "success") {
+        setLessons(data.data.lessons)
+      } else {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to create lesson. Please try again.",
+          description: "Failed to fetch lessons.",
         })
       }
-    })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch lessons.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const addQuestion = () => {
-    const questions = form.getValues("questions")
-    form.setValue("questions", [
-      ...questions,
-      {
-        questionText: "",
-        options: ["", ""],
-        correctAnswer: 0
+  async function updateLesson(lessonId: string, data: any) {
+    try {
+      const response = await fetch(`${API_URL}/lessons/${lessonId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      })
+
+      const result = await response.json()
+      if (result.status === "success") {
+        toast({
+          title: "Success",
+          description: "Lesson updated successfully",
+        })
+        fetchLessons()
+        setEditDialogOpen(false)
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error?.message || "Failed to update lesson",
+        })
       }
-    ])
-  }
-
-  const removeQuestion = (index: number) => {
-    const questions = form.getValues("questions")
-    form.setValue("questions", questions.filter((_, i) => i !== index))
-  }
-
-  const addOption = (questionIndex: number) => {
-    const questions = form.getValues("questions")
-    const question = questions[questionIndex]
-    form.setValue(`questions.${questionIndex}.options`, [...question.options, ""])
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update lesson",
+      })
+    }
   }
 
   return (
@@ -115,161 +137,96 @@ export default function ManagePage() {
         </p>
       </div>
 
-      <Tabs defaultValue="create" className="space-y-4">
+      <Tabs defaultValue="view" className="space-y-4">
         <TabsList>
           <TabsTrigger value="create">Create Lesson</TabsTrigger>
           <TabsTrigger value="view">View Lessons</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="create" className="space-y-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lesson Details</CardTitle>
-                  <CardDescription>
-                    Enter the basic information about your lesson.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter lesson title" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Content</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter lesson content"
-                            className="min-h-[200px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Questions</CardTitle>
-                  <CardDescription>
-                    Add multiple-choice questions for this lesson.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {form.watch("questions").map((question, questionIndex) => (
-                    <div key={questionIndex} className="space-y-4 p-4 border rounded-lg relative">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2"
-                        onClick={() => removeQuestion(questionIndex)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-
-                      <FormField
-                        control={form.control}
-                        name={`questions.${questionIndex}.questionText`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Question {questionIndex + 1}</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter your question" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="space-y-2">
-                        <Label>Options</Label>
-                        {question.options.map((_, optionIndex) => (
-                          <FormField
-                            key={optionIndex}
-                            control={form.control}
-                            name={`questions.${questionIndex}.options.${optionIndex}`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <div className="flex items-center space-x-2">
-                                    <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
-                                    <input
-                                      type="radio"
-                                      name={`correctAnswer-${questionIndex}`}
-                                      checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
-                                      onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addOption(questionIndex)}
-                        >
-                          Add Option
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addQuestion}
-                    className="w-full"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Question
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Lesson
-              </Button>
-            </form>
-          </Form>
+        <TabsContent value="view">
+          <LessonList
+            lessons={lessons}
+            isLoading={isLoading}
+            onView={(lesson) => {
+              setSelectedLesson(lesson)
+              setViewDialogOpen(true)
+            }}
+            onEdit={(lesson) => {
+              setSelectedLesson(lesson)
+              setEditDialogOpen(true)
+            }}
+            onAssign={(lesson) => {
+              setSelectedLesson(lesson)
+              setAssignDialogOpen(true)
+            }}
+            onDelete={(lessonId) => {
+              setLessons(lessons.filter(lesson => lesson._id !== lessonId))
+            }}
+          />
         </TabsContent>
 
-        <TabsContent value="view">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Lessons</CardTitle>
-              <CardDescription>
-                View and manage your existing lessons.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">No lessons created yet.</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="create" className="space-y-4">
+          <CreateLessonForm
+            onSubmit={async (data) => {
+              startTransition(async () => {
+                try {
+                  const response = await fetch(`${API_URL}/lessons`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...getAuthHeader()
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(data),
+                  })
+
+                  const result = await response.json()
+
+                  if (result.status === "success") {
+                    toast({
+                      title: "Success",
+                      description: "Lesson created successfully",
+                    })
+                    fetchLessons() // Refresh the lessons list
+                  } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Error",
+                      description: result.error?.message || "Failed to create lesson.",
+                    })
+                  }
+                } catch (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to create lesson. Please try again.",
+                  })
+                }
+              })
+            }}
+            isPending={isPending}
+          />
         </TabsContent>
       </Tabs>
+
+      <ViewLessonDialog
+        lesson={selectedLesson}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+
+      <EditLessonDialog
+        lesson={selectedLesson}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onUpdate={updateLesson}
+      />
+
+      <AssignLessonDialog
+        lesson={selectedLesson}
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+      />
     </div>
   )
 } 
