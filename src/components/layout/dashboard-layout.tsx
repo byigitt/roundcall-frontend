@@ -145,7 +145,7 @@ export default function DashboardLayout({
           {/* Profile & Sign Out */}
           <div className="border-t p-4">
             <div className="space-y-2">
-              <Link href="/profile">
+              <Link href="/dashboard/profile">
                 <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-primary">
                   <User className="mr-2 h-5 w-5" />
                   Profile
@@ -165,7 +165,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="pl-64">
+      <main className="pl-72">
         <div className="container py-6 max-w-7xl">
           {children}
         </div>
