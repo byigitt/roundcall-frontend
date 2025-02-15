@@ -6,18 +6,59 @@
 POST /api/lessons
 ```
 
-**Request Body**
+**Request Body - Regular Text Lesson**
 
 ```json
 {
   "title": "Customer Service Basics",
-  "description": "Learn the essential principles of excellent customer service",
-  "contentType": "both", // text, video, both
+  "description": "Learn the essential principles of customer service",
+  "contentType": "text",
   "textContent": "In this lesson, we will cover the fundamental principles of customer service...",
-  "videoUrl": "https://example.com/videos/customer-service-basics",
-  "duration": 1800, // in seconds (required for video content)
-  "difficulty": "beginner", // beginner, intermediate, advanced
+  "difficulty": "beginner",
   "tags": ["customer-service", "fundamentals"]
+}
+```
+
+**Request Body - Timed Text Lesson**
+
+```json
+{
+  "title": "Quick Response Training",
+  "description": "Practice quick thinking and response in customer service scenarios",
+  "contentType": "timed_text",
+  "textContent": "A customer approaches you angrily about a defective product. How do you respond?",
+  "displayTime": 10000, // 10 seconds in milliseconds
+  "difficulty": "intermediate",
+  "tags": ["customer-service", "quick-response", "training"]
+}
+```
+
+**Request Body - Video Lesson**
+
+```json
+{
+  "title": "Customer Service Video Guide",
+  "description": "Watch and learn from real customer service scenarios",
+  "contentType": "video",
+  "videoUrl": "https://example.com/videos/customer-service-guide",
+  "duration": 1800, // 30 minutes in seconds
+  "difficulty": "beginner",
+  "tags": ["customer-service", "video-guide"]
+}
+```
+
+**Request Body - Hybrid Lesson**
+
+```json
+{
+  "title": "Complete Customer Service Training",
+  "description": "Comprehensive training with text and video content",
+  "contentType": "both",
+  "textContent": "This comprehensive guide combines written materials with video examples...",
+  "videoUrl": "https://example.com/videos/customer-service-complete",
+  "duration": 3600,
+  "difficulty": "advanced",
+  "tags": ["customer-service", "comprehensive", "training"]
 }
 ```
 
@@ -29,14 +70,13 @@ POST /api/lessons
   "data": {
     "lesson": {
       "_id": "507f1f77bcf86cd799439013",
-      "title": "Customer Service Basics",
-      "description": "Learn the essential principles of excellent customer service",
-      "contentType": "both",
-      "textContent": "In this lesson, we will cover the fundamental principles of customer service...",
-      "videoUrl": "https://example.com/videos/customer-service-basics",
-      "duration": 1800,
-      "difficulty": "beginner",
-      "tags": ["customer-service", "fundamentals"],
+      "title": "Quick Response Training",
+      "description": "Practice quick thinking and response in customer service scenarios",
+      "contentType": "timed_text",
+      "textContent": "A customer approaches you angrily about a defective product. How do you respond?",
+      "displayTime": 10000,
+      "difficulty": "intermediate",
+      "tags": ["customer-service", "quick-response", "training"],
       "createdBy": {
         "_id": "507f1f77bcf86cd799439011",
         "firstName": "John",
@@ -47,11 +87,11 @@ POST /api/lessons
         "firstName": "John",
         "lastName": "Doe"
       },
+      "isActive": true,
       "totalEnrolled": 0,
       "averageRating": 0,
-      "isActive": true,
-      "createdAt": "2024-03-15T10:30:00Z",
-      "updatedAt": "2024-03-15T10:30:00Z"
+      "createdAt": "2024-02-15T10:30:00Z",
+      "updatedAt": "2024-02-15T10:30:00Z"
     }
   }
 }
@@ -66,8 +106,8 @@ GET /api/lessons
 **Query Parameters**
 
 - `page` (optional): Page number (default: 1)
-- `limit` (optional): Items per page (default: 10)
-- `contentType` (optional): Filter by content type (text, video, both)
+- `limit` (optional): Items per page (default: 10, max: 100)
+- `contentType` (optional): Filter by content type ('text', 'video', 'both', 'timed_text')
 - `difficulty` (optional): Filter by difficulty level
 - `tags` (optional): Filter by tags (comma-separated)
 - `createdBy` (optional): Filter by creator ID
@@ -83,21 +123,16 @@ GET /api/lessons
     "lessons": [
       {
         "_id": "507f1f77bcf86cd799439013",
-        "title": "Customer Service Basics",
-        "description": "Learn the essential principles of excellent customer service",
-        "contentType": "both",
-        "duration": 1800,
-        "difficulty": "beginner",
-        "tags": ["customer-service", "fundamentals"],
-        "createdBy": {
-          "_id": "507f1f77bcf86cd799439011",
-          "firstName": "John",
-          "lastName": "Doe"
-        },
+        "title": "Quick Response Training",
+        "description": "Practice quick thinking and response in customer service scenarios",
+        "contentType": "timed_text",
+        "displayTime": 10000,
+        "difficulty": "intermediate",
+        "tags": ["customer-service", "quick-response", "training"],
         "totalEnrolled": 45,
         "averageRating": 4.5,
-        "createdAt": "2024-03-15T10:30:00Z",
-        "updatedAt": "2024-03-15T10:30:00Z"
+        "createdAt": "2024-02-15T10:30:00Z",
+        "updatedAt": "2024-02-15T10:30:00Z"
       }
       // ... more lessons
     ]
@@ -311,8 +346,15 @@ GET /api/lessons/:lessonId/trainees/:traineeId/progress
 {
   "status": "error",
   "error": {
-    "code": "LESS_004",
-    "message": "Video URL and duration are required for video or hybrid lessons"
+    "code": "VAL_001",
+    "message": "Validation failed",
+    "details": {
+      "contentType": ["Invalid content type"],
+      "displayTime": [
+        "Display time must be between 5 and 300 seconds (in milliseconds)"
+      ],
+      "textContent": ["Text content is required for timed text lessons"]
+    }
   }
 }
 ```
