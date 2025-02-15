@@ -50,7 +50,7 @@ export function EditLessonDialog({
     defaultValues: {
       title: "",
       description: "",
-      contentType: "text",
+      contentType: "Text",
       textContent: "",
       difficulty: "beginner",
       tags: [],
@@ -144,7 +144,7 @@ export function EditLessonDialog({
           <form onSubmit={(e) => {
             e.preventDefault()
             const formData = form.getValues()
-            onUpdate(lesson._id, formData)
+            onUpdate(lesson.id, formData)
           }} className="space-y-4">
             <div className="space-y-4">
               <FormField

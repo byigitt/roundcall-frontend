@@ -39,11 +39,10 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
     defaultValues: {
       title: "",
       description: "",
-      contentType: "text",
+      contentType: "Text",
       textContent: "",
-      videoUrl: "",
-      duration: 0,
-      displayTime: 10000,
+      videoURL: "",
+      timeBased: undefined,
       difficulty: "beginner",
       tags: [],
       questions: [
@@ -60,19 +59,20 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
 
   // Reset dependent fields when content type changes
   useEffect(() => {
-    if (contentType === "text" || contentType === "timed_text") {
-      form.setValue("videoUrl", "", { shouldValidate: true })
-      form.setValue("duration", 0, { shouldValidate: true })
-    }
-    if (contentType !== "timed_text") {
-      form.setValue("displayTime", 10000, { shouldValidate: true })
-    }
-    if (contentType === "video") {
-      form.setValue("textContent", "", { shouldValidate: true })
-    }
-    
-    // Trigger validation after changing content type
-    form.trigger()
+    const timeoutId = setTimeout(() => {
+      if (contentType === "Text") {
+        form.setValue("videoURL", "", { shouldValidate: true })
+      }
+      if (contentType === "Video") {
+        form.setValue("textContent", "", { shouldValidate: true })
+        form.setValue("timeBased", undefined, { shouldValidate: true })
+      }
+      
+      // Trigger validation after changing content type
+      form.trigger()
+    }, 0)
+
+    return () => clearTimeout(timeoutId)
   }, [contentType, form])
 
   // Add debug information with more details
@@ -145,23 +145,25 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
       // Log the data being submitted
       console.log('Submitting data:', data)
 
-      const submissionData = { ...data } as Partial<LessonFormValues>
-
-      // Remove videoUrl and duration if not needed
-      if (data.contentType === "text" || data.contentType === "timed_text") {
-        delete submissionData.videoUrl
-        delete submissionData.duration
+      const submissionData = {
+        title: data.title,
+        description: data.description,
+        contentType: data.contentType,
+        textContent: data.textContent || undefined,
+        videoURL: data.videoURL || undefined,
+        timeBased: data.timeBased,
+        // Additional fields for future API updates
+        difficulty: data.difficulty,
+        tags: data.tags.filter(tag => tag.trim() !== ""),
+        questions: data.questions
       }
 
-      // Remove displayTime if not needed
-      if (data.contentType !== "timed_text") {
-        delete submissionData.displayTime
-      }
+      // Remove undefined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(submissionData).filter(([_, value]) => value !== undefined)
+      ) as LessonFormValues
 
-      // Filter out empty tags
-      submissionData.tags = data.tags.filter(tag => tag.trim() !== "")
-
-      await onSubmit(submissionData as LessonFormValues)
+      await onSubmit(cleanedData)
       
       // Reset form after successful submission
       form.reset()
@@ -229,46 +231,36 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                 <FormItem>
                   <FormLabel>Content Type</FormLabel>
                   <FormControl>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id="text"
-                          value="text"
-                          checked={field.value === "text"}
+                          id="Text"
+                          value="Text"
+                          checked={field.value === "Text"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label htmlFor="text">Regular Text</Label>
+                        <Label htmlFor="Text">Text</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id="timed_text"
-                          value="timed_text"
-                          checked={field.value === "timed_text"}
+                          id="Video"
+                          value="Video"
+                          checked={field.value === "Video"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label htmlFor="timed_text">Timed Text</Label>
+                        <Label htmlFor="Video">Video</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id="video"
-                          value="video"
-                          checked={field.value === "video"}
+                          id="Both"
+                          value="Both"
+                          checked={field.value === "Both"}
                           onChange={(e) => field.onChange(e.target.value)}
                         />
-                        <Label htmlFor="video">Video</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="both"
-                          value="both"
-                          checked={field.value === "both"}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                        <Label htmlFor="both">Both</Label>
+                        <Label htmlFor="Both">Both</Label>
                       </div>
                     </div>
                   </FormControl>
@@ -287,217 +279,71 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(contentType === "text" || contentType === "timed_text" || contentType === "both") && (
-              <FormField
-                control={form.control}
-                name="textContent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Text Content</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter lesson content"
-                        className="min-h-[200px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Content must be at least 50 characters. Current length: {field.value.length}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {contentType === "timed_text" && (
-              <FormField
-                control={form.control}
-                name="displayTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Display Time (seconds)</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Timer className="h-4 w-4 text-muted-foreground" />
-                        <Input
-                          type="number"
-                          min={5}
-                          max={300}
-                          {...field}
-                          onChange={e => field.onChange(Number(e.target.value) * 1000)} // Convert to milliseconds
-                          value={field.value ? field.value / 1000 : ''} // Convert from milliseconds
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Time in seconds before the content is hidden (5-300 seconds)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {(contentType === "video" || contentType === "both") && (
+            {(contentType === "Text" || contentType === "Both") && (
               <>
                 <FormField
                   control={form.control}
-                  name="videoUrl"
+                  name="textContent"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Video URL</FormLabel>
+                      <FormLabel>Text Content</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter video URL" {...field} />
+                        <Textarea
+                          placeholder="Enter lesson content"
+                          className="min-h-[200px]"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="duration"
+                  name="timeBased"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Video Duration (seconds)</FormLabel>
+                      <FormLabel>Time Limit (minutes)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder="Enter video duration in seconds"
-                          {...field}
-                          onChange={e => field.onChange(Number(e.target.value))}
-                        />
+                        <div className="flex items-center gap-2">
+                          <Timer className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            min={1}
+                            max={180}
+                            placeholder="Optional"
+                            {...field}
+                            onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            value={field.value || ''}
+                          />
+                        </div>
                       </FormControl>
+                      <FormDescription>
+                        Optional: Set a time limit for reading the content (1-180 minutes)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </>
             )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Difficulty</CardTitle>
-            <CardDescription>
-              Select the difficulty level for this lesson.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <FormField
-              control={form.control}
-              name="difficulty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Difficulty</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="difficulty"
-                        value="beginner"
-                        checked={field.value === "beginner"}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                      <Label>Beginner</Label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="difficulty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="difficulty"
-                        value="intermediate"
-                        checked={field.value === "intermediate"}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                      <Label>Intermediate</Label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="difficulty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="difficulty"
-                        value="advanced"
-                        checked={field.value === "advanced"}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                      <Label>Advanced</Label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tags</CardTitle>
-            <CardDescription>
-              Add tags to help categorize this lesson.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {form.watch("tags").map((tag, index) => (
+            {(contentType === "Video" || contentType === "Both") && (
               <FormField
-                key={index}
                 control={form.control}
-                name={`tags.${index}`}
+                name="videoURL"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tag {index + 1}</FormLabel>
+                    <FormLabel>Video URL</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input placeholder="Enter tag" {...field} />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeTag(index)}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Input placeholder="Enter video URL" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            ))}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.setValue("tags", [...form.getValues("tags"), ""])}
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Tag
-            </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -505,105 +351,129 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
           <CardHeader>
             <CardTitle>Questions</CardTitle>
             <CardDescription>
-              Add multiple-choice questions for this lesson.
+              Add questions to the lesson.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {form.watch("questions").map((question, questionIndex) => (
-              <div key={questionIndex} className="space-y-4 p-4 border rounded-lg relative">
+            {/* Questions Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Questions</Label>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  onClick={() => removeQuestion(questionIndex)}
+                  variant="outline"
+                  size="sm"
+                  onClick={addQuestion}
+                  className="flex items-center gap-2"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
+                  Add Question
                 </Button>
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name={`questions.${questionIndex}.questionText`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Question {questionIndex + 1}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your question" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
-                  <Label>Options</Label>
-                  {question.options.map((_, optionIndex) => (
+              {form.watch("questions").map((question, questionIndex) => (
+                <div key={questionIndex} className="space-y-4 p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
                     <FormField
-                      key={optionIndex}
                       control={form.control}
-                      name={`questions.${questionIndex}.options.${optionIndex}`}
+                      name={`questions.${questionIndex}.questionText`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex-1 mr-4">
+                          <FormLabel>Question {questionIndex + 1}</FormLabel>
                           <FormControl>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center space-x-2 flex-1">
-                                <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
-                                <input
-                                  type="radio"
-                                  name={`correctAnswer-${questionIndex}`}
-                                  checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
-                                  onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeOption(questionIndex, optionIndex)}
-                                className="h-8 w-8"
-                                disabled={question.options.length <= 2}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Input placeholder="Enter question" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addOption(questionIndex)}
-                  >
-                    Add Option
-                  </Button>
-                </div>
-              </div>
-            ))}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeQuestion(questionIndex)}
+                      disabled={form.watch("questions").length <= 1}
+                      className="self-end"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addQuestion}
-              className="w-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Question
-            </Button>
+                  <div className="space-y-2">
+                    {question.options.map((_, optionIndex) => (
+                      <FormField
+                        key={optionIndex}
+                        control={form.control}
+                        name={`questions.${questionIndex}.options.${optionIndex}`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                                <input
+                                  type="radio"
+                                  checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
+                                  onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeOption(questionIndex, optionIndex)}
+                                  disabled={question.options.length <= 2}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addOption(questionIndex)}
+                      className="mt-2"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Option
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isPending || !formState.isValid || formState.isSubmitting}
+          disabled={isPending || !form.formState.isValid}
         >
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isPending ? "Creating..." : "Create Lesson"}
         </Button>
+
+        {/* Validation Status Display */}
+        <div className="mt-4 p-4 border rounded-lg space-y-2 bg-muted">
+          <h3 className="font-medium">Form Status:</h3>
+          <div className="text-sm space-y-1">
+            <p>Form is valid: {form.formState.isValid ? "✅" : "❌"}</p>
+            <p>Form is submitting: {form.formState.isSubmitting ? "✅" : "❌"}</p>
+            <p>Form is dirty: {form.formState.isDirty ? "✅" : "❌"}</p>
+          </div>
+          
+          {Object.keys(form.formState.errors).length > 0 && (
+            <div className="mt-4">
+              <h4 className="font-medium text-destructive">Validation Errors:</h4>
+              <pre className="mt-2 p-2 bg-destructive/10 rounded text-xs whitespace-pre-wrap">
+                {JSON.stringify(form.formState.errors, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
       </form>
     </Form>
   )

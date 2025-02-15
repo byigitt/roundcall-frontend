@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 interface LessonListProps {
   lessons: Lesson[]
@@ -70,7 +70,7 @@ export function LessonList({
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`${API_URL}/lessons/${lessonToDelete._id}`, {
+      const response = await fetch(`${API_URL}/lessons/${lessonToDelete.id}`, {
         method: 'DELETE',
         headers: {
           ...getAuthHeader()
@@ -83,7 +83,7 @@ export function LessonList({
           title: "Success",
           description: "Lesson deleted successfully"
         })
-        onDelete?.(lessonToDelete._id)
+        onDelete?.(lessonToDelete.id)
       } else {
         const data = await response.json()
         toast({
@@ -139,30 +139,18 @@ export function LessonList({
                   <TableHead>Title</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Difficulty</TableHead>
-                  <TableHead>Enrolled</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLessons.map((lesson) => (
-                  <TableRow key={lesson._id}>
+                  <TableRow key={lesson.id}>
                     <TableCell className="font-medium">{lesson.title}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{lesson.contentType}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{lesson.difficulty}</Badge>
-                    </TableCell>
-                    <TableCell>{lesson.totalEnrolled}</TableCell>
-                    <TableCell>{lesson.averageRating.toFixed(1)}</TableCell>
-                    <TableCell>{new Date(lesson.updatedAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={lesson.isActive ? "default" : "secondary"}>
-                        {lesson.isActive ? "Active" : "Inactive"}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">

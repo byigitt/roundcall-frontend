@@ -17,7 +17,7 @@ import { EditLessonDialog } from "./edit-lesson-dialog"
 import { AssignLessonDialog } from "./assign-lesson-dialog"
 import { CreateLessonForm } from "./create-lesson-form"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export default function ManagePage() {
   const { toast } = useToast()
@@ -72,14 +72,11 @@ export default function ManagePage() {
       })
 
       const data = await response.json()
-      if (data.status === "success") {
+      console.log(data)
+      if (data.length > 0) {
         setLessons(data.data.lessons)
       } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch lessons.",
-        })
+        setLessons([])
       }
     } catch (error) {
       toast({
@@ -160,7 +157,7 @@ export default function ManagePage() {
               setAssignDialogOpen(true)
             }}
             onDelete={(lessonId) => {
-              setLessons(lessons.filter(lesson => lesson._id !== lessonId))
+              setLessons(lessons.filter(lesson => lesson.id !== lessonId))
             }}
           />
         </TabsContent>
@@ -181,7 +178,7 @@ export default function ManagePage() {
                   })
 
                   const result = await response.json()
-
+                  console.log(result);
                   if (result.status === "success") {
                     toast({
                       title: "Success",

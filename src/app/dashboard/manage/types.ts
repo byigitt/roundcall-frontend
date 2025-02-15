@@ -1,37 +1,49 @@
 import * as z from "zod"
 
 export const lessonSchema = z.object({
-  title: z.string().min(5, "Title must be between 5 and 200 characters"),
-  description: z.string().min(20, "Description must be between 20 and 1000 characters"),
-  contentType: z.enum(["text", "timed_text", "video", "both"]),
-  textContent: z.string().min(50, "Content must be at least 50 characters"),
-  videoUrl: z.union([
-    z.string().url("Invalid video URL"),
-    z.string().length(0)
-  ]),
-  duration: z.number().optional(), // in seconds for video content
-  displayTime: z.number().min(5000).max(300000).optional(), // 5-300 seconds in milliseconds
+  title: z.string()
+    .min(5, "Title must be at least 5 characters")
+    .max(200, "Title must be at most 200 characters"),
+  description: z.string()
+    .min(50, "Description must be at least 50 characters"),
+  contentType: z.enum(["Text", "Video", "Both"]),
+  textContent: z.string().optional(),
+  videoURL: z.string().optional(),
+  timeBased: z.number().min(1).max(180).optional(),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
   tags: z.array(z.string()),
-  questions: z.array(
-    z.object({
-      questionText: z.string().min(10, "Question must be at least 10 characters"),
-      options: z.array(z.string().min(1, "Option cannot be empty")).min(2, "At least 2 options required"),
-      correctAnswer: z.number().min(0)
-    })
-  ).min(1, "At least one question is required")
+  questions: z.array(z.object({
+    questionText: z.string().min(1, "Question text is required"),
+    options: z.array(z.string().min(1, "Option text is required")).min(2, "At least 2 options are required"),
+    correctAnswer: z.number()
+  }))
 }).refine((data) => {
-  // Validate videoUrl only when content type is video or both
-  if (data.contentType === "video" || data.contentType === "both") {
-    return data.videoUrl.length > 0 && z.string().url().safeParse(data.videoUrl).success;
+  if (data.contentType === "Text" || data.contentType === "Both") {
+    return !!data.textContent;
   }
   return true;
 }, {
-  message: "Video URL is required for video content",
-  path: ["videoUrl"]
+  message: "Text content is required for Text or Both content types",
+  path: ["textContent"]
+}).refine((data) => {
+  if (data.contentType === "Video" || data.contentType === "Both") {
+    return data.videoURL && z.string().url().safeParse(data.videoURL).success;
+  }
+  return true;
+}, {
+  message: "Please enter a valid URL for Video content",
+  path: ["videoURL"]
 })
 
 export type LessonFormValues = z.infer<typeof lessonSchema>
+
+export interface Lesson extends LessonFormValues {
+  id: string
+  createdBy: string
+  createdAt: string
+  status?: string
+  progress?: number
+}
 
 export type Question = {
   questionText: string
@@ -45,28 +57,16 @@ export type TimerSettings = {
   hideContentAfterTimer: boolean
 }
 
-export interface Lesson {
-  _id: string
-  title: string
-  description: string
-  contentType: "text" | "timed_text" | "video" | "both"
-  textContent?: string
-  videoUrl?: string
-  duration?: number
-  displayTime?: number
-  difficulty: "beginner" | "intermediate" | "advanced"
-  totalEnrolled: number
-  averageRating: number
-  createdAt: string
-  updatedAt: string
-  isActive: boolean
-  tags?: string[]
-  questions?: Question[]
-}
-
 export interface User {
   _id: string;
-  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface Trainee {
+  id: string;
   email: string;
   firstName: string;
   lastName: string;

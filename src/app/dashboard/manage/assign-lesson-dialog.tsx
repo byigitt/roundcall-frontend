@@ -18,6 +18,14 @@ import { Lesson } from "./types"
 import { useToast } from "@/hooks/use-toast"
 import { getAuthHeader } from "@/lib/auth/tokens"
 
+interface Trainee {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 interface TraineeLesson {
   _id: string
   lesson: {
@@ -25,10 +33,13 @@ interface TraineeLesson {
     title: string
     contentType: string
     difficulty: string
-  }
+  } | null
+  trainee: string
+  assignedBy: string
   status: 'pending' | 'in_progress' | 'completed' | 'expired'
   progress: number
-  startedAt: string
+  createdAt: string
+  updatedAt: string
   lastAccessedAt: string
   dueDate?: string
 }
@@ -66,7 +77,7 @@ interface AssignLessonDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export function AssignLessonDialog({
   lesson,
@@ -90,7 +101,7 @@ export function AssignLessonDialog({
     
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/users/my-trainees/lessons?lessonId=${lesson._id}`, {
+      const response = await fetch(`${API_URL}/users/my-trainees/lessons?lessonId=${lesson.id}`, {
         headers: {
           ...getAuthHeader()
         },
@@ -98,30 +109,40 @@ export function AssignLessonDialog({
       })
       const data = await response.json()
       if (data.status === "success") {
-        const lessonTrainees = data.data.trainees
+        console.log(data.data.trainees);
+        try {
+          const lessonTrainees = data.data.trainees
           .filter((trainee: TraineeWithLessons) => 
-            trainee.lessons.some((l: TraineeLesson) => l.lesson._id === lesson._id)
+            Array.isArray(trainee.lessons) && trainee.lessons.length > 0
           )
           .map((trainee: TraineeWithLessons) => {
-            const lessonAssignment = trainee.lessons.find((l: TraineeLesson) => l.lesson._id === lesson._id)
+            const lessonAssignment = trainee.lessons?.find((l: TraineeLesson) => l.trainee === trainee._id)
             return {
               _id: lessonAssignment?._id || '',
-              lesson: lesson._id,
+              lesson: lesson.id,
               trainee: {
                 _id: trainee._id,
                 email: trainee.email,
                 firstName: trainee.firstName,
                 lastName: trainee.lastName
               },
-              assignedBy: '',
+              assignedBy: lessonAssignment?.assignedBy || '',
               status: lessonAssignment?.status || 'pending',
               progress: lessonAssignment?.progress || 0,
-              dueDate: lessonAssignment?.dueDate,
-              createdAt: lessonAssignment?.startedAt || '',
-              updatedAt: lessonAssignment?.lastAccessedAt || ''
+              dueDate: undefined,
+              createdAt: lessonAssignment?.createdAt || '',
+              updatedAt: lessonAssignment?.updatedAt || ''
             }
           })
-        setAssignedTrainees(lessonTrainees)
+          setAssignedTrainees(lessonTrainees)
+        } catch (error) {
+          console.error('Error fetching assigned trainees:', error)
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to fetch assigned trainees"
+          })
+        }
       }
     } catch (error) {
       console.error('Error fetching assigned trainees:', error)
@@ -148,7 +169,7 @@ export function AssignLessonDialog({
         },
         credentials: 'include',
         body: JSON.stringify({
-          lessonId: lesson._id,
+          lessonId: lesson.id,
           traineeEmails: [traineeEmail]
         })
       })

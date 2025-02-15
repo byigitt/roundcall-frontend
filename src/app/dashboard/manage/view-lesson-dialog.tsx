@@ -62,49 +62,6 @@ export function ViewLessonDialog({
                   {lesson.contentType}
                 </Badge>
               </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <BarChart className="h-4 w-4" />
-                  <span className="text-sm font-medium">Difficulty</span>
-                </div>
-                <Badge 
-                  variant={
-                    lesson.difficulty === "beginner" ? "default" :
-                    lesson.difficulty === "intermediate" ? "secondary" :
-                    "destructive"
-                  }
-                  className="capitalize"
-                >
-                  {lesson.difficulty}
-                </Badge>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">Total Enrolled</span>
-                </div>
-                <p className="text-2xl font-bold">{lesson.totalEnrolled}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Star className="h-4 w-4" />
-                  <span className="text-sm font-medium">Average Rating</span>
-                </div>
-                <p className="text-2xl font-bold">{lesson.averageRating.toFixed(1)}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Last Updated</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(lesson.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
             </div>
 
             <Separator />
