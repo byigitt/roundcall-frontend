@@ -85,11 +85,6 @@ export default function LessonsPage() {
         }
       } else {
         setLessons([])
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch assigned lessons.",
-        })
       }
     } catch (error) {
       console.error("Fetch error:", error);
