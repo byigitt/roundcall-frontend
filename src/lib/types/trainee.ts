@@ -32,4 +32,17 @@ export interface Trainee {
   inProgressLessons: number;
   notStartedLessons: number;
   completionRate: number;
+  assignedLessons: {
+    id: string;
+    lessonID: string;
+    status: string;
+    progress: number;
+    assignedAt: string;
+    completedAt?: string;
+    lesson?: {
+      title: string;
+      description: string;
+      contentType: string;
+    };
+  }[];
 } 

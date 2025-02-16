@@ -18,28 +18,80 @@ export const lessonSchema = z.object({
 
 export const questionSchema = z.object({
   lessonID: z.string(),
-  questionText: z.string().min(10, "Question must be at least 10 characters"),
-  options: z.record(z.string(), z.string()),
+  questionText: z.string(),
+  options: z.record(z.string()),
   correctAnswer: z.string(),
-  timeLimit: z.number() // seconds
+  timeLimit: z.number().optional()
 })
 
-// Types
-export type Lesson = z.infer<typeof lessonSchema> & {
-  id?: string
-  createdBy?: string
-  createdAt?: string
+export type ContentType = "Text" | "Video" | "Both"
+export type LessonStatus = "Assigned" | "In Progress" | "Completed" | "Expired"
+
+export interface QuestionOption {
+  text: string
+  isCorrect: boolean
+}
+
+export interface Question {
+  text: string
+  options: Array<string | { text: string; isCorrect: boolean }>
+}
+
+export interface LessonContent {
+  id: string
+  title: string
+  description: string
+  contentType: ContentType
+  textContent?: string
+  videoURL?: string
+  timeBased?: number
+  questions: Question[]
+  createdAt: string
+  createdBy: string
+}
+
+export interface Lesson extends LessonContent {
+  _id: string
   status?: LessonStatus
-  progress?: number
+  assignedAt?: string
 }
 
-export type Question = z.infer<typeof questionSchema> & {
-  id?: string
-  trainerID?: string
-  createdAt?: string
+export interface AssignedLesson {
+  id: string
+  lessonID: string
+  traineeID: string
+  trainerID: string
+  status: LessonStatus
+  startedAt: string | null
+  completedAt: string | null
+  assignedAt: string
+  progress: number
+  lesson?: LessonContent
 }
 
-export type LessonStatus = "Assigned" | "In Progress" | "Completed"
+export interface Trainee {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LessonAssignment {
+  id: string
+  lessonID: string
+  traineeID: string
+  trainerID: string
+  status: LessonStatus
+  startedAt: string | null
+  completedAt: string | null
+  assignedAt: string
+  progress: number
+  lesson: LessonContent
+  trainee: Trainee
+}
 
 // API Functions
 export async function createLesson(lesson: Lesson): Promise<{ id: string } | { detail: string }> {
