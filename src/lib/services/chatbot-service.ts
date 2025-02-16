@@ -7,12 +7,12 @@ interface ChatMessage {
 }
 
 interface Analysis {
-  profesyonellik: number
-  empati: number
-  cozum_odaklilik: number
-  iletisim: number
-  genel_puan: number
-  detayli_analiz: string
+  professionalism: number
+  empathy: number
+  solution_oriented: number
+  communication: number
+  overall_score: number
+  detailed_analysis: string
 }
 
 interface CollectedInfo {

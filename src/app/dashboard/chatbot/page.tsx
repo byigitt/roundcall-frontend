@@ -17,12 +17,12 @@ interface Message {
 }
 
 interface Analysis {
-  profesyonellik: number
-  empati: number
-  cozum_odaklilik: number
-  iletisim: number
-  genel_puan: number
-  detayli_analiz: string
+  professionalism: number
+  empathy: number
+  solution_oriented: number
+  communication: number
+  overall_score: number
+  detailed_analysis: string
 }
 
 const removeMarkdownAsterisks = (text: string) => {
@@ -62,15 +62,15 @@ export default function ChatbotPage() {
       } else {
         toast({
           variant: "destructive",
-          title: "Hata",
-          description: startResponse.error?.message || "Chatbot başlatılamadı.",
+          title: "Error",
+          description: startResponse.error?.message || "Failed to start chatbot.",
         })
       }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Chatbot başlatılırken bir hata oluştu.",
+        title: "Error",
+        description: "An error occurred while starting the chatbot.",
       })
     } finally {
       setIsLoading(false)
@@ -99,22 +99,26 @@ export default function ChatbotPage() {
         setMessages((prev) => [...prev, botMessage])
         if (response.data.analysis) {
           setAnalysis({
-            ...response.data.analysis,
-            detayli_analiz: removeMarkdownAsterisks(response.data.analysis.detayli_analiz)
+            professionalism: response.data.analysis.professionalism,
+            empathy: response.data.analysis.empathy,
+            solution_oriented: response.data.analysis.solution_oriented,
+            communication: response.data.analysis.communication,
+            overall_score: response.data.analysis.overall_score,
+            detailed_analysis: removeMarkdownAsterisks(response.data.analysis.detailed_analysis)
           })
         }
       } else {
         toast({
           variant: "destructive",
-          title: "Hata",
-          description: response.error?.message || "Mesaj gönderilemedi.",
+          title: "Error",
+          description: response.error?.message || "Failed to send message.",
         })
       }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Mesaj gönderilirken bir hata oluştu.",
+        title: "Error",
+        description: "An error occurred while sending the message.",
       })
     } finally {
       setIsLoading(false)
@@ -122,14 +126,20 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Chatbot Dashboard</h1>
+        <p className="text-muted-foreground">
+          Chatbot for customer service simulation
+        </p>
+      </div>
       <div className="grid gap-4 grid-cols-[2fr_1fr]">
         <Card className="h-[800px] flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Chatbot Asistanı</CardTitle>
-                <CardDescription>Müşteri hizmetleri simülasyonu için chatbot</CardDescription>
+                <CardTitle>Happy Customer Chatbot</CardTitle>
+                <CardDescription>What a happy customer would say!</CardDescription>
               </div>
               <Button 
                 onClick={handleStartChatbot} 
@@ -139,14 +149,14 @@ export default function ChatbotPage() {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    Başlatılıyor
+                    Starting
                   </div>
                 ) : conversationId ? (
-                  "Aktif"
+                  "Active"
                 ) : (
                   <div className="flex items-center gap-2">
                     <Play className="h-4 w-4" />
-                    Başlat
+                    Start
                   </div>
                 )}
               </Button>
@@ -157,7 +167,7 @@ export default function ChatbotPage() {
               <div className="space-y-4">
                 {!conversationId && !isLoading && (
                   <div className="flex justify-center items-center h-32 text-muted-foreground">
-                    Chatbot'u başlatmak için "Başlat" butonuna tıklayın
+                    Click the "Start" button to begin the chatbot conversation
                   </div>
                 )}
                 {messages.map((message, index) => (
@@ -183,7 +193,7 @@ export default function ChatbotPage() {
             </ScrollArea>
             <div className="mt-4 flex gap-2">
               <Input
-                placeholder="Mesajınızı yazın..."
+                placeholder="Type your message..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => {
@@ -203,20 +213,20 @@ export default function ChatbotPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-[800px]">
+        <Card className="h-[800px] border-0 shadow-none">
           <CardContent>
             <ScrollArea className="h-full pr-4">
               <div className="space-y-6">
                 {analysis ? (
                   <div className="mt-6">
-                    <h4 className="font-medium mb-2">Detaylı Analiz</h4>
+                    <h4 className="font-semibold text-lg mb-2">Detailed Analysis</h4>
                     <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {analysis.detayli_analiz}
+                      {analysis.detailed_analysis}
                     </div>
                   </div>
                 ) : (
                   <div className="flex justify-center items-center h-32 text-muted-foreground">
-                    Henüz analiz yapılmadı
+                    No analysis available yet
                   </div>
                 )}
               </div>
