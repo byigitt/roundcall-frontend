@@ -64,6 +64,14 @@ export function TraineeList({
     }
   })
 
+  const handleView = (trainee: Trainee) => {
+    try {
+      onView(trainee)
+    } catch (error) {
+      console.error('Error viewing trainee:', error)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -107,80 +115,87 @@ export function TraineeList({
             No trainees found
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Trainee</TableHead>
-                <TableHead>Assigned Lessons</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTrainees.map((trainee) => (
-                <TableRow key={trainee.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {trainee.firstName} {trainee.lastName}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {trainee.email}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">
-                        {trainee.stats.totalAssigned} Lessons
-                      </div>
-                      <div className="text-xs text-muted-foreground space-x-2">
-                        <span>{trainee.stats.completed} completed</span>
-                        <span>•</span>
-                        <span>{trainee.stats.inProgress} in progress</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Progress value={trainee.stats.averageProgress} className="h-2" />
-                        <span className="text-sm font-medium">
-                          {trainee.stats.averageProgress}%
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {trainee.stats.inProgress > 0 && (
-                        <Badge variant="default">Active</Badge>
-                      )}
-                      {trainee.stats.completed === trainee.stats.totalAssigned && trainee.stats.totalAssigned > 0 && (
-                        <Badge variant="default">Completed</Badge>
-                      )}
-                      {trainee.stats.pending > 0 && (
-                        <Badge variant="secondary">Pending</Badge>
-                      )}
-                      {trainee.stats.totalAssigned === 0 && (
-                        <Badge variant="secondary">No lessons</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onView(trainee)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="relative overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Trainee</TableHead>
+                  <TableHead>Assigned Lessons</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTrainees.map((trainee) => (
+                  <TableRow key={trainee.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {trainee.firstName} {trainee.lastName}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {trainee.email}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">
+                          {trainee.stats.totalAssigned} Lessons
+                        </div>
+                        <div className="text-xs text-muted-foreground space-x-2">
+                          <span>{trainee.stats.completed} completed</span>
+                          <span>•</span>
+                          <span>{trainee.stats.inProgress} in progress</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Progress 
+                            value={trainee.stats.averageProgress} 
+                            className="h-2"
+                          />
+                          <span className="text-sm font-medium">
+                            {trainee.stats.averageProgress}%
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {trainee.stats.inProgress > 0 && (
+                          <Badge variant="default">Active</Badge>
+                        )}
+                        {trainee.stats.completed === trainee.stats.totalAssigned && trainee.stats.totalAssigned > 0 && (
+                          <Badge variant="default">Completed</Badge>
+                        )}
+                        {trainee.stats.pending > 0 && (
+                          <Badge variant="secondary">Pending</Badge>
+                        )}
+                        {trainee.stats.totalAssigned === 0 && (
+                          <Badge variant="secondary">No lessons</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleView(trainee)}
+                        title="View trainee details"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View trainee details</span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

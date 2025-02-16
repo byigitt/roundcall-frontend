@@ -73,16 +73,14 @@ export function TraineeDetails({
           <DialogTitle className="text-xl font-bold">
             {trainee.firstName} {trainee.lastName}
           </DialogTitle>
-          <DialogDescription>
-            <div className="flex items-center gap-2 text-sm">
-              <span>{trainee.email}</span>
-              <span>•</span>
-              <span>Last active {new Date(trainee.lastActivity).toLocaleDateString()}</span>
-            </div>
+          <DialogDescription className="flex items-center gap-2 text-sm">
+            {trainee.email}
+            <span>•</span>
+            Last active {new Date(trainee.lastActivity).toLocaleDateString()}
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(80vh-8rem)] pr-4">
+        <ScrollArea className="h-auto pr-4">
           <div className="space-y-6">
             {/* Overview Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -122,64 +120,66 @@ export function TraineeDetails({
             <Separator />
 
             {/* Lessons List */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Assigned Lessons</h3>
+            {/* <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Assigned Lessons</h3>
+                <Badge variant="secondary">
+                  {trainee.stats.totalAssigned} lessons
+                </Badge>
+              </div>
               
-              {trainee.lessons.length === 0 ? (
+              {!trainee.assignedLessons || trainee.assignedLessons.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No lessons assigned yet
+                  <BookOpen className="h-8 w-8 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm font-medium">No lessons assigned yet</p>
+                  <p className="text-sm">Assign lessons to this trainee to get started</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {trainee.lessons.map((lesson) => (
+                <div className="space-y-3">
+                  {trainee.assignedLessons.map((assignment) => (
                     <div
-                      key={lesson._id}
-                      className="flex items-start justify-between p-4 rounded-lg border"
+                      key={assignment.id}
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
                     >
-                      <div className="space-y-1">
-                        <div className="font-medium">{lesson.lesson.title}</div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <Badge variant="outline">
-                            {lesson.lesson.contentType}
-                          </Badge>
-                          <Badge variant="secondary">
-                            {lesson.lesson.difficulty}
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{assignment.lesson?.title}</div>
+                          <Badge 
+                            variant={getStatusColor(assignment.status)}
+                            className="capitalize flex items-center gap-1.5"
+                          >
+                            {getStatusIcon(assignment.status)}
+                            <span>{assignment.status}</span>
                           </Badge>
                         </div>
+                        
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Started {new Date(lesson.startedAt).toLocaleDateString()}
-                          </div>
-                          {lesson.dueDate && (
+                          {assignment.assignedAt && (
                             <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Due {new Date(lesson.dueDate).toLocaleDateString()}
+                              <Calendar className="h-3 w-3" />
+                              <span>Assigned {new Date(assignment.assignedAt).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          {assignment.completedAt && (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Completed {new Date(assignment.completedAt).toLocaleDateString()}</span>
                             </div>
                           )}
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-4">
-                        <Badge 
-                          variant={getStatusColor(lesson.status)}
-                          className="capitalize flex items-center gap-1"
-                        >
-                          {getStatusIcon(lesson.status)}
-                          {lesson.status.replace('_', ' ')}
-                        </Badge>
-                        <div className="w-[120px] space-y-1">
-                          <Progress value={lesson.progress} className="h-2" />
-                          <div className="text-xs text-right text-muted-foreground">
-                            {lesson.progress}% complete
-                          </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Progress value={assignment.progress} className="flex-1 h-2" />
+                          <span className="text-xs text-muted-foreground w-12 text-right">
+                            {assignment.progress}%
+                          </span>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         </ScrollArea>
       </DialogContent>

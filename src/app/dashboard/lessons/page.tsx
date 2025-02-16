@@ -8,43 +8,9 @@ import { LessonContent } from "./components/lesson-content"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { Lesson } from "@/lib/services/lesson-service"
+import { AssignedLesson, LessonContent as LessonContentType } from "@/lib/services/lesson-service"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-
-const adaptLessonType = (lesson: AssignedLesson['lesson']) => ({
-  title: lesson.title,
-  description: lesson.description,
-  contentType: lesson.contentType as "Text" | "Video" | "Both",
-  textContent: lesson.textContent,
-  videoURL: lesson.videoUrl,
-  timeBased: lesson.duration
-})
-
-export interface AssignedLesson {
-  _id: string
-  lesson: {
-    _id: string
-    title: string
-    description: string
-    contentType: string
-    textContent?: string
-    videoUrl?: string
-    duration?: number
-    displayTime?: number
-    difficulty: string
-    questions: {
-      questionText: string
-      options: string[]
-      correctAnswer: number
-    }[]
-  }
-  status: 'pending' | 'in_progress' | 'completed' | 'expired'
-  progress: number
-  startedAt: string
-  lastAccessedAt: string
-  dueDate?: string
-}
 
 export default function LessonsPage() {
   const { toast } = useToast()
@@ -61,7 +27,7 @@ export default function LessonsPage() {
   async function fetchAssignedLessons() {
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_URL}/assigned-lessons/my-lessons`, {
+      const response = await fetch(`${API_URL}/lessons/assigned/my-lessons`, {
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeader()
@@ -70,31 +36,49 @@ export default function LessonsPage() {
       })
 
       const data = await response.json()
-      if (data.status == "success" && data.data?.assignments) {
+      console.log("Raw API Response:", JSON.stringify(data, null, 2));
+      
+      if (data.length > 0) {
         try {
-          console.log(data.data.assignments);
-          const mappedLessons = data.data.assignments
-            .filter((assignment: any) => assignment.lesson) // Filter out assignments with null lessons
-            .map((assignment: any) => ({
-              _id: assignment._id,
-              lesson: {
-                _id: assignment.lesson._id,
-                title: assignment.lesson.title,
-                description: assignment.lesson.description,
-                contentType: assignment.lesson.contentType,
-                textContent: assignment.lesson.textContent,
-                videoUrl: assignment.lesson.videoUrl,
-                duration: assignment.lesson.duration,
-                displayTime: assignment.lesson.displayTime,
-                difficulty: assignment.lesson.difficulty,
-                questions: assignment.lesson.questions || []
+          // First, let's fetch the lesson details for each assignment
+          const lessonDetailsPromises = data.map(async (assignment: any) => {
+            const lessonResponse = await fetch(`${API_URL}/lessons/${assignment.lessonID}`, {
+              headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeader()
               },
-              status: assignment.status,
-              progress: assignment.progress,
-              startedAt: assignment.createdAt,
-              lastAccessedAt: assignment.lastAccessedAt,
-              dueDate: assignment.dueDate
-            }));
+              credentials: 'include',
+            });
+            return lessonResponse.json();
+          });
+
+          const lessonDetails = await Promise.all(lessonDetailsPromises);
+          console.log("Lesson Details:", JSON.stringify(lessonDetails, null, 2));
+
+          const mappedLessons: AssignedLesson[] = data.map((assignment: any, index: number) => ({
+            id: assignment.id,
+            lessonID: assignment.lessonID,
+            traineeID: assignment.traineeID,
+            trainerID: assignment.trainerID,
+            status: assignment.status,
+            startedAt: assignment.startedAt,
+            completedAt: assignment.completedAt,
+            assignedAt: assignment.assignedAt,
+            progress: assignment.progress || 0,
+            lesson: {
+              title: lessonDetails[index].title,
+              description: lessonDetails[index].description,
+              contentType: lessonDetails[index].contentType,
+              textContent: lessonDetails[index].textContent || '',
+              videoURL: lessonDetails[index].videoURL,
+              timeBased: lessonDetails[index].timeBased,
+              questions: lessonDetails[index].questions || [],
+              createdAt: lessonDetails[index].createdAt || new Date().toISOString(),
+              createdBy: lessonDetails[index].createdBy || 'Unknown'
+            }
+          }));
+          
+          console.log("Mapped Lessons:", JSON.stringify(mappedLessons, null, 2));
           setLessons(mappedLessons)
         } catch (error) {
           console.error("Error mapping lessons:", error);
@@ -108,6 +92,7 @@ export default function LessonsPage() {
         })
       }
     } catch (error) {
+      console.error("Fetch error:", error);
       setLessons([])
       toast({
         variant: "destructive",
@@ -121,7 +106,7 @@ export default function LessonsPage() {
 
   async function updateLessonStatus(lessonId: string, status: AssignedLesson['status']) {
     try {
-      const response = await fetch(`${API_URL}/assigned-lessons/${lessonId}/progress`, {
+      const response = await fetch(`${API_URL}/lessons/assigned/${lessonId}/progress`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -132,12 +117,9 @@ export default function LessonsPage() {
       })
 
       const data = await response.json()
-      if (data.status === "success") {
-        toast({
-          title: "Success",
-          description: "Lesson status updated successfully",
-        })
-        fetchAssignedLessons() // Refresh the list
+      console.log("Update Lesson Status Response:", JSON.stringify(data, null, 2)); 
+      if (data.status) {
+        fetchAssignedLessons()
       } else {
         toast({
           variant: "destructive",
@@ -156,7 +138,7 @@ export default function LessonsPage() {
 
   async function updateLessonProgress(lessonId: string, progress: number) {
     try {
-      const response = await fetch(`${API_URL}/assigned-lessons/${lessonId}/progress`, {
+      const response = await fetch(`${API_URL}/lessons/assigned/${lessonId}/progress`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -167,8 +149,8 @@ export default function LessonsPage() {
       })
 
       const data = await response.json()
-      if (data.status === "success") {
-        // Only show toast for completion
+      console.log("Update Lesson Progress Response:", JSON.stringify(data, null, 2));
+      if (data.id) {
         if (progress === 100) {
           toast({
             title: "Success",
@@ -176,13 +158,12 @@ export default function LessonsPage() {
           })
         }
         
-        // If progress is more than 0 and status is pending, update to in_progress
-        const lesson = lessons.find(l => l._id === lessonId)
-        if (lesson && progress > 0 && lesson.status === 'pending') {
-          await updateLessonStatus(lessonId, 'in_progress')
+        const lesson = lessons.find(l => l.id === lessonId)
+        if (lesson && progress > 0) {
+          await updateLessonStatus(lessonId, 'In Progress')
         }
         
-        fetchAssignedLessons() // Refresh the list
+        fetchAssignedLessons()
       } else {
         toast({
           variant: "destructive",
@@ -200,6 +181,13 @@ export default function LessonsPage() {
   }
 
   const handleViewLesson = (lesson: AssignedLesson) => {
+    if (lesson.status === 'Completed') {
+      toast({
+        title: "Lesson Completed",
+        description: "You have already completed this lesson.",
+      })
+      return
+    }
     setSelectedLesson(lesson)
     setActiveTab("content")
   }
@@ -211,11 +199,17 @@ export default function LessonsPage() {
 
   const handleComplete = async () => {
     if (!selectedLesson) return
-    await updateLessonProgress(selectedLesson._id, 100)
-    await updateLessonStatus(selectedLesson._id, 'completed')
+    await updateLessonProgress(selectedLesson.id, 100)
+    await updateLessonStatus(selectedLesson.id, 'Completed')
+    await fetchAssignedLessons()
     setActiveTab("list")
     setSelectedLesson(null)
     setIsReading(false)
+    
+    toast({
+      title: "Success",
+      description: "Lesson completed successfully! You can find it in your completed lessons.",
+    })
   }
 
   return (
@@ -237,17 +231,17 @@ export default function LessonsPage() {
 
         <TabsContent value="list" className="mt-6">
           <LessonList
-            lessons={lessons.map(l => adaptLessonType(l.lesson))}
+            lessons={lessons}
             isLoading={isLoading}
-            onView={(lesson) => handleViewLesson(lessons.find(l => l.lesson.title === lesson.title)!)}
+            onView={handleViewLesson}
           />
         </TabsContent>
 
         <TabsContent value="content" className="mt-6">
-          {selectedLesson && (
+          {selectedLesson?.lesson && (
             <LessonContent
-              lesson={adaptLessonType(selectedLesson.lesson)}
-              onUpdateProgress={(progress) => updateLessonProgress(selectedLesson._id, progress)}
+              lesson={selectedLesson.lesson}
+              onUpdateProgress={(progress) => updateLessonProgress(selectedLesson.id, progress)}
               onComplete={handleComplete}
               onStartReading={handleStartReading}
               isReading={isReading}
