@@ -73,9 +73,17 @@ export default function ManagePage() {
       })
 
       const data = await response.json()  
-      console.log(data)
+      console.log('Lessons data:', data)
+      console.log('Sample lesson:', data[0])
       if (data.length > 0) {
-        setLessons(data)
+        // Ensure each lesson has an _id field
+        const validatedLessons = data.map((lesson: { _id?: string; id?: string; [key: string]: any }) => {
+          if (!lesson._id && lesson.id) {
+            return { ...lesson, _id: lesson.id }
+          }
+          return lesson
+        })
+        setLessons(validatedLessons)
       } else {
         setLessons([])
       }
@@ -104,7 +112,7 @@ export default function ManagePage() {
       })
 
       const result = await response.json()
-      if (result.status === "success") {
+      if (result.title) {
         toast({
           title: "Success",
           description: "Lesson updated successfully",
@@ -159,7 +167,7 @@ export default function ManagePage() {
               setAssignDialogOpen(true)
             }}
             onDelete={(lessonId) => {
-              setLessons(lessons.filter(lesson => lesson.id !== lessonId))
+              setLessons(lessons.filter(lesson => lesson._id !== lessonId))
             }}
           />
         </TabsContent>

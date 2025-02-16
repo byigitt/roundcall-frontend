@@ -12,25 +12,40 @@ export const lessonSchema = z.object({
   timeBased: z.number().min(1).max(180).optional(),
   questions: z.array(z.object({
     questionText: z.string().min(1, "Question text is required"),
-    options: z.array(z.string().min(1, "Option text is required")).min(2, "At least 2 options are required"),
+    options: z.array(z.object({
+      text: z.string().min(1, "Option text is required"),
+      isCorrect: z.boolean()
+    })).min(2, "At least 2 options are required"),
     correctAnswer: z.number()
   }))
-}).refine((data) => {
+}).superRefine((data, ctx) => {
+  // Validate textContent based on contentType
   if (data.contentType === "Text" || data.contentType === "Both") {
-    return !!data.textContent;
+    if (!data.textContent) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Text content is required for Text or Both content types",
+        path: ["textContent"]
+      });
+    }
   }
-  return true;
-}, {
-  message: "Text content is required for Text or Both content types",
-  path: ["textContent"]
-}).refine((data) => {
+
+  // Validate videoURL based on contentType
   if (data.contentType === "Video" || data.contentType === "Both") {
-    return data.videoURL && z.string().url().safeParse(data.videoURL).success;
+    if (!data.videoURL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Video URL is required for Video or Both content types",
+        path: ["videoURL"]
+      });
+    } else if (!z.string().url().safeParse(data.videoURL).success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please enter a valid URL for Video content",
+        path: ["videoURL"]
+      });
+    }
   }
-  return true;
-}, {
-  message: "Please enter a valid URL for Video content",
-  path: ["videoURL"]
 })
 
 export type LessonFormValues = z.infer<typeof lessonSchema>
@@ -51,7 +66,10 @@ export interface Lesson {
 
 export type Question = {
   questionText: string
-  options: string[]
+  options: {
+    text: string
+    isCorrect: boolean
+  }[]
   correctAnswer: number
 }
 

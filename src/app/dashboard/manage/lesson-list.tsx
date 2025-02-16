@@ -61,8 +61,8 @@ export function LessonList({
   const [lessonToDelete, setLessonToDelete] = useState<Lesson | null>(null)
 
   const filteredLessons = lessons.filter(lesson =>
-    lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lesson.description.toLowerCase().includes(searchTerm.toLowerCase())
+    lesson.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lesson.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleDelete = async () => {
@@ -70,7 +70,7 @@ export function LessonList({
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`${API_URL}/lessons/${lessonToDelete.id}`, {
+      const response = await fetch(`${API_URL}/lessons/${lessonToDelete._id}`, {
         method: 'DELETE',
         headers: {
           ...getAuthHeader()
@@ -83,8 +83,8 @@ export function LessonList({
           title: "Success",
           description: "Lesson deleted successfully"
         })
-        if (lessonToDelete.id && onDelete) {
-          onDelete(lessonToDelete.id)
+        if (lessonToDelete._id && onDelete) {
+          onDelete(lessonToDelete._id)
         }
       } else {
         const data = await response.json()
@@ -144,11 +144,11 @@ export function LessonList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLessons.map((lesson) => (
-                  <TableRow key={lesson.id}>
-                    <TableCell className="font-medium">{lesson.title}</TableCell>
+                {filteredLessons.map((lesson, index) => (
+                  <TableRow key={lesson._id || `lesson-${index}`}>
+                    <TableCell className="font-medium">{lesson.title || ''}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{lesson.contentType}</Badge>
+                      <Badge variant="outline">{lesson.contentType || ''}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">

@@ -46,7 +46,10 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
       questions: [
         {
           questionText: "",
-          options: ["", ""],
+          options: [
+            { text: "", isCorrect: true },
+            { text: "", isCorrect: false }
+          ],
           correctAnswer: 0
         }
       ]
@@ -79,7 +82,10 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
       ...questions,
       {
         questionText: "",
-        options: ["", ""],
+        options: [
+          { text: "", isCorrect: true },
+          { text: "", isCorrect: false }
+        ],
         correctAnswer: 0
       }
     ], { shouldValidate: true })
@@ -94,7 +100,10 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
   const addOption = (questionIndex: number) => {
     const questions = form.getValues("questions")
     const question = questions[questionIndex]
-    form.setValue(`questions.${questionIndex}.options`, [...question.options, ""], { shouldValidate: true })
+    form.setValue(`questions.${questionIndex}.options`, [
+      ...question.options,
+      { text: "", isCorrect: false }
+    ], { shouldValidate: true })
   }
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
@@ -104,23 +113,29 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
     // Don't remove if there are only 2 options
     if (question.options.length <= 2) return
     
-    // If removing the correct answer, set it to the first option
-    if (question.correctAnswer === optionIndex) {
+    // If removing the correct option, set the first remaining option as correct
+    const wasCorrect = question.options[optionIndex].isCorrect
+    const newOptions = question.options.filter((_, i) => i !== optionIndex)
+    
+    if (wasCorrect) {
+      newOptions[0].isCorrect = true
       form.setValue(`questions.${questionIndex}.correctAnswer`, 0, { shouldValidate: true })
     }
-    // If removing an option before the correct answer, adjust the correct answer index
-    else if (optionIndex < question.correctAnswer) {
-      form.setValue(`questions.${questionIndex}.correctAnswer`, question.correctAnswer - 1, { shouldValidate: true })
-    }
     
-    const newOptions = question.options.filter((_, i) => i !== optionIndex)
     form.setValue(`questions.${questionIndex}.options`, newOptions, { shouldValidate: true })
   }
 
   const handleSubmit = async (data: LessonFormValues) => {
     try {
-      // Log the data being submitted
-      console.log('Submitting data:', data)
+      // Transform the data to match the API schema
+      const transformedQuestions = data.questions.map(question => ({
+        questionText: question.questionText,
+        options: question.options.map((option, index) => ({
+          text: option.text,
+          isCorrect: index === question.correctAnswer
+        })),
+        correctAnswer: question.correctAnswer
+      }))
 
       const submissionData = {
         title: data.title,
@@ -129,22 +144,11 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
         textContent: data.textContent || undefined,
         videoURL: data.videoURL || undefined,
         timeBased: data.timeBased,
-        questions: data.questions
-      }
-      // Remove undefined values and ensure all required fields are present
-      const cleanedData: LessonFormValues = {
-        title: submissionData.title,
-        description: submissionData.description,
-        contentType: submissionData.contentType,
-        questions: submissionData.questions,
-        ...(submissionData.textContent && { textContent: submissionData.textContent }),
-        ...(submissionData.videoURL && { videoURL: submissionData.videoURL }),
-        ...(submissionData.timeBased && { timeBased: submissionData.timeBased })
+        questions: transformedQuestions
       }
 
-      await onSubmit(cleanedData)
-      
-      // Reset form after successful submission
+      console.log('Submitting data:', submissionData)
+      await onSubmit(submissionData)
       form.reset()
     } catch (error) {
       console.error('Form submission error:', error)
@@ -379,35 +383,54 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
                   </div>
 
                   <div className="space-y-2">
-                    {question.options.map((_, optionIndex) => (
-                      <FormField
-                        key={optionIndex}
-                        control={form.control}
-                        name={`questions.${questionIndex}.options.${optionIndex}`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
+                    {question.options.map((option, optionIndex) => (
+                      <div key={optionIndex} className="flex items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`questions.${questionIndex}.options.${optionIndex}.text`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
                                 <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`questions.${questionIndex}.options.${optionIndex}.isCorrect`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
                                 <input
                                   type="radio"
                                   checked={form.watch(`questions.${questionIndex}.correctAnswer`) === optionIndex}
-                                  onChange={() => form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex)}
+                                  onChange={() => {
+                                    // Update correctAnswer
+                                    form.setValue(`questions.${questionIndex}.correctAnswer`, optionIndex);
+                                    // Update isCorrect flags
+                                    const newOptions = question.options.map((opt, idx) => ({
+                                      ...opt,
+                                      isCorrect: idx === optionIndex
+                                    }));
+                                    form.setValue(`questions.${questionIndex}.options`, newOptions, { shouldValidate: true });
+                                  }}
                                 />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeOption(questionIndex, optionIndex)}
-                                  disabled={question.options.length <= 2}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeOption(questionIndex, optionIndex)}
+                          disabled={question.options.length <= 2}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ))}
                     <Button
                       type="button"
@@ -435,23 +458,69 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
           {isPending ? "Creating..." : "Create Lesson"}
         </Button>
 
-        {/* Validation Status Display */}
-        <div className="mt-4 p-4 border rounded-lg space-y-2 bg-muted">
+        {/* Enhanced Validation Status Display */}
+        <div className="mt-4 p-4 border rounded-lg space-y-4 bg-muted">
           <h3 className="font-medium">Form Status:</h3>
           <div className="text-sm space-y-1">
             <p>Form is valid: {form.formState.isValid ? "✅" : "❌"}</p>
             <p>Form is submitting: {form.formState.isSubmitting ? "✅" : "❌"}</p>
             <p>Form is dirty: {form.formState.isDirty ? "✅" : "❌"}</p>
+            <p>Fields touched: {Object.keys(form.formState.touchedFields).join(", ") || "none"}</p>
           </div>
           
+          {/* Detailed Validation Errors */}
           {Object.keys(form.formState.errors).length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
               <h4 className="font-medium text-destructive">Validation Errors:</h4>
-              <pre className="mt-2 p-2 bg-destructive/10 rounded text-xs whitespace-pre-wrap">
-                {JSON.stringify(form.formState.errors, null, 2)}
-              </pre>
+              <div className="space-y-2">
+                {Object.entries(form.formState.errors).map(([field, error]) => {
+                  // Handle nested errors (like questions array)
+                  if (field === 'questions' && error.type === 'array') {
+                    return (
+                      <div key={field} className="space-y-1">
+                        <p className="font-medium">Questions:</p>
+                        {(error as any).message}
+                        {Array.isArray((error as any).questions) && (error as any).questions.map((qError: any, index: number) => (
+                          <div key={index} className="ml-4">
+                            <p>Question {index + 1}:</p>
+                            <pre className="text-xs bg-destructive/10 p-2 rounded">
+                              {JSON.stringify(qError, null, 2)}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={field} className="p-2 bg-destructive/10 rounded">
+                      <p className="font-medium">{field}:</p>
+                      <p className="text-sm text-destructive">{(error as any).message}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
+
+          {/* Current Form Values */}
+          <div className="mt-4">
+            <h4 className="font-medium mb-2">Current Form Values:</h4>
+            <pre className="text-xs bg-background p-2 rounded whitespace-pre-wrap">
+              {JSON.stringify({
+                title: form.watch('title'),
+                description: form.watch('description'),
+                contentType: form.watch('contentType'),
+                textContent: form.watch('textContent'),
+                videoURL: form.watch('videoURL'),
+                timeBased: form.watch('timeBased'),
+                questions: form.watch('questions').map(q => ({
+                  questionText: q.questionText,
+                  options: q.options,
+                  correctAnswer: q.correctAnswer
+                }))
+              }, null, 2)}
+            </pre>
+          </div>
         </div>
       </form>
     </Form>

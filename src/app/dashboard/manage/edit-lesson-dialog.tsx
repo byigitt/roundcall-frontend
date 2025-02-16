@@ -54,7 +54,10 @@ export function EditLessonDialog({
       textContent: "",
       questions: [{
         questionText: "",
-        options: ["", ""],
+        options: [
+          { text: "", isCorrect: true },
+          { text: "", isCorrect: false }
+        ],
         correctAnswer: 0
       }]
     }
@@ -69,7 +72,10 @@ export function EditLessonDialog({
         textContent: lesson.textContent || "",
         questions: lesson.questions || [{
           questionText: "",
-          options: ["", ""],
+          options: [
+            { text: "", isCorrect: true },
+            { text: "", isCorrect: false }
+          ],
           correctAnswer: 0
         }]
       })
@@ -82,7 +88,10 @@ export function EditLessonDialog({
       ...questions,
       {
         questionText: "",
-        options: ["", ""],
+        options: [
+          { text: "", isCorrect: true },
+          { text: "", isCorrect: false }
+        ],
         correctAnswer: 0
       }
     ], { shouldValidate: true })
@@ -97,7 +106,10 @@ export function EditLessonDialog({
   const addOption = (questionIndex: number) => {
     const questions = form.getValues("questions")
     const question = questions[questionIndex]
-    form.setValue(`questions.${questionIndex}.options`, [...question.options, ""], { shouldValidate: true })
+    form.setValue(`questions.${questionIndex}.options`, [
+      ...question.options,
+      { text: "", isCorrect: false }
+    ], { shouldValidate: true })
   }
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
@@ -250,7 +262,7 @@ export function EditLessonDialog({
                               <FormControl>
                                 <div className="flex items-center gap-2">
                                   <div className="flex items-center space-x-2 flex-1">
-                                    <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                                    <Input placeholder={`Option ${optionIndex + 1}`} {...field} value={field.value.text} onChange={e => field.onChange({ ...field.value, text: e.target.value })} />
                                     <input
                                       type="radio"
                                       name={`correctAnswer-${questionIndex}`}

@@ -92,7 +92,7 @@ export function ViewLessonDialog({
                           <Badge variant={optionIndex === question.correctAnswer ? "default" : "outline"} className="w-6 h-6 flex items-center justify-center p-0">
                             {String.fromCharCode(65 + optionIndex)}
                           </Badge>
-                          <span className="text-sm">{option}</span>
+                          <span className="text-sm">{option.text}</span>
                         </div>
                       ))}
                     </div>
