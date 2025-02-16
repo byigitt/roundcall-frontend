@@ -25,6 +25,10 @@ interface Analysis {
   detayli_analiz: string
 }
 
+const removeMarkdownAsterisks = (text: string) => {
+  return text.replace(/\*\*/g, '');
+}
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -49,7 +53,11 @@ export default function ChatbotPage() {
       if (startResponse.status === "success" && startResponse.data) {
         setConversationId(startResponse.data.id)
         if (startResponse.data.messages && startResponse.data.messages.length > 0) {
-          setMessages(startResponse.data.messages)
+          const firstMessage = startResponse.data.messages[0]
+          setMessages([{
+            ...firstMessage,
+            role: "agent"
+          }])
         }
       } else {
         toast({
@@ -90,7 +98,10 @@ export default function ChatbotPage() {
         }
         setMessages((prev) => [...prev, botMessage])
         if (response.data.analysis) {
-          setAnalysis(response.data.analysis)
+          setAnalysis({
+            ...response.data.analysis,
+            detayli_analiz: removeMarkdownAsterisks(response.data.analysis.detayli_analiz)
+          })
         }
       } else {
         toast({

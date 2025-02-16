@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut, LineChart, Users, BookOpen, MessageSquare } from "lucide-react"
+import { Phone, LayoutDashboard, GraduationCap, BarChart2, User, LogOut, LineChart, Users, BookOpen, MessageSquare, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -46,6 +46,12 @@ const navigation = [
     title: "Chatbot",
     href: "/dashboard/chatbot",
     icon: <MessageSquare className="h-5 w-5" />,
+    roles: ["Trainee"]
+  },
+  {
+    title: "Scenarios",
+    href: "/dashboard/scenarios",
+    icon: <MessageCircle className="h-5 w-5" />,
     roles: ["Trainee"]
   },
   {
