@@ -33,7 +33,7 @@ export interface QuestionOption {
 }
 
 export interface Question {
-  text: string
+  questionText: string
   options: Array<string | { text: string; isCorrect: boolean }>
 }
 

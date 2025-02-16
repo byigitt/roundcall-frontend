@@ -653,7 +653,7 @@ export function LessonContent({
                         </div>
                         
                         <div className="p-4 border rounded-lg space-y-4">
-                          <div className="font-medium">{lesson.questions[currentQuestionIndex].text}</div>
+                          <div className="font-medium">{lesson.questions[currentQuestionIndex].questionText}</div>
                           
                           <div className="space-y-2">
                             {lesson.questions[currentQuestionIndex].options.map((option: string | { text: string }, index) => (
