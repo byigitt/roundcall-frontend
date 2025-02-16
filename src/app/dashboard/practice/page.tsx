@@ -73,65 +73,65 @@ interface Score {
 // Practice tipleri
 type PracticeType = "speed" | "normal"
 
-// Geçici örnek veri
+// Mock lesson data in English
 const mockLesson: Lesson = {
   _id: "1",
-  title: "Müşteri Hizmetleri Temelleri",
-  description: "Mükemmel müşteri hizmetinin temel prensiplerini öğrenin",
+  title: "Customer Service Fundamentals",
+  description: "Learn the core principles of excellent customer service",
   contentType: "text",
-  textContent: `# Müşteri Hizmetleri Mükemmelliği
+  textContent: `# Customer Service Excellence
 
-Müşteri hizmetleri, modern iş dünyasının en kritik başarı faktörlerinden biridir. Günümüzde müşteriler sadece ürün veya hizmet kalitesine değil, aynı zamanda aldıkları hizmet deneyimine de büyük önem vermektedir.
+Customer service is one of the most critical success factors in the modern business world. Today, customers value not only product or service quality but also their service experience.
 
-## Müşteri Hizmetlerinin Önemi
+## Importance of Customer Service
 
-* Müşteri sadakati oluşturma
-* Marka değerini artırma
-* Rekabet avantajı sağlama
-* Müşteri yaşam boyu değerini yükseltme
-* Olumlu ağızdan ağıza pazarlama
+* Building customer loyalty
+* Increasing brand value
+* Gaining competitive advantage
+* Enhancing customer lifetime value
+* Positive word-of-mouth marketing
 
-## Temel Prensipler
+## Core Principles
 
-### 1. Aktif Dinleme
-* Müşteriyi sözünü kesmeden dinleyin
-* Not alın ve önemli noktaları tekrarlayın
-* Sözel olmayan ipuçlarına dikkat edin
-* Empati kurun ve anlayış gösterin
+### 1. Active Listening
+* Listen to customers without interruption
+* Take notes and repeat key points
+* Pay attention to non-verbal cues
+* Show empathy and understanding
 
-### 2. Profesyonel İletişim
-* Net ve anlaşılır bir dil kullanın
-* Pozitif bir ton benimseyin
-* Teknik jargondan kaçının
-* Çözüm odaklı iletişim kurun
+### 2. Professional Communication
+* Use clear and understandable language
+* Maintain a positive tone
+* Avoid technical jargon
+* Focus on solution-oriented communication
 
-### 3. Hızlı ve Etkili Çözüm
-* Problemi doğru teşhis edin
-* Gerçekçi çözümler sunun
-* Takip süreci oluşturun
-* Müşteri memnuniyetini doğrulayın
+### 3. Quick and Effective Solutions
+* Correctly diagnose the problem
+* Offer realistic solutions
+* Create a follow-up process
+* Verify customer satisfaction
 
-### 4. Sorumluluk Alma
-* Hataları kabul edin
-* İnisiyatif kullanın
-* Sözlerinizi tutun
-* Süreç boyunca müşteriyi bilgilendirin
+### 4. Taking Responsibility
+* Acknowledge mistakes
+* Take initiative
+* Keep your promises
+* Keep the customer informed throughout the process
 
-## Başarılı Müşteri Hizmetleri İçin İpuçları
+## Tips for Successful Customer Service
 
-1. Her müşteriye özel yaklaşım gösterin
-2. Sabırlı ve sakin kalın
-3. Sürekli kendinizi geliştirin
-4. Müşteri geri bildirimlerini dikkate alın
-5. Ekip içi iletişimi güçlü tutun
+1. Provide personalized approach to each customer
+2. Stay patient and calm
+3. Continuously improve yourself
+4. Consider customer feedback
+5. Maintain strong team communication
 
-## Önemli Hatırlatma
+## Important Reminder
 
-> "Müşterinin algısı sizin gerçekliğinizdir. Onların deneyimini anlamak ve iyileştirmek için sürekli çaba gösterin."
+> "The customer's perception is your reality. Continuously strive to understand and improve their experience."
 
-## Sonuç
+## Conclusion
 
-Mükemmel müşteri hizmeti, sürekli öğrenme ve gelişme gerektiren bir süreçtir. Temel prensipleri uygulayarak ve müşteri odaklı bir yaklaşım benimseyerek, hem müşteri memnuniyetini hem de işletme başarısını artırabilirsiniz.`,
+Excellent customer service is a process that requires continuous learning and development. By applying the core principles and adopting a customer-focused approach, you can increase both customer satisfaction and business success.`,
   duration: 1800,
   totalEnrolled: 125,
   averageRating: 4.5
@@ -140,13 +140,13 @@ Mükemmel müşteri hizmeti, sürekli öğrenme ve gelişme gerektiren bir süre
 const mockQuestions: Question[] = [
   {
     _id: "q1",
-    text: "Müşteri hizmetlerinin en önemli yönü nedir?",
+    text: "What is the most important aspect of customer service?",
     type: "multipleChoice",
     options: [
-      "Hızlı satış yapmak",
-      "Uzun vadeli ilişkiler kurmak",
-      "Senaryolara tam uymak",
-      "Çağrı süresini minimize etmek"
+      "Making quick sales",
+      "Building long-term relationships",
+      "Following scripts exactly",
+      "Minimizing call duration"
     ],
     correctAnswer: 1,
     difficulty: "beginner",
@@ -155,13 +155,13 @@ const mockQuestions: Question[] = [
   },
   {
     _id: "q2",
-    text: "Aşağıdakilerden hangisi derste bahsedilen temel prensiplerden biri DEĞİLDİR?",
+    text: "Which of the following is NOT one of the core principles mentioned in the lesson?",
     type: "multipleChoice",
     options: [
-      "Müşterileri dinlemek",
-      "Empati göstermek",
-      "Sorumluluktan kaçınmak",
-      "Hızlı çözümler bulmak"
+      "Listening to customers",
+      "Showing empathy",
+      "Avoiding responsibility",
+      "Finding quick solutions"
     ],
     correctAnswer: 2,
     difficulty: "beginner",
@@ -170,20 +170,20 @@ const mockQuestions: Question[] = [
   },
   {
     _id: "q3",
-    text: "Müşteri memnuniyetinin önemini kendi cümlelerinizle açıklayın.",
+    text: "Explain the importance of customer satisfaction in your own words.",
     type: "textRecall",
-    correctAnswer: "Müşteri memnuniyeti, işletmenin sürdürülebilir başarısı için temel faktördür. Memnun müşteriler sadık müşterilere dönüşür ve tekrar eden iş sağlar.",
+    correctAnswer: "Customer satisfaction is fundamental for sustainable business success. Satisfied customers become loyal customers and provide recurring business.",
     difficulty: "intermediate",
     points: 15,
     maxAttempts: 3
   }
 ]
 
-// Hızlı practice için örnek veri
+// Speed practice mock data
 const mockSpeedLesson: Lesson = {
   _id: "speed1",
-  title: "Hızlı Müşteri Hizmetleri Eğitimi",
-  description: "Bu eğitimde 1 dakikalık videoyu izleyip hızlı yanıtlar vermeniz gerekecek. Video kontrolü yapılamaz ve sorular için süre sınırı vardır.",
+  title: "Quick Customer Service Training",
+  description: "In this training, you'll watch a 1-minute video and provide quick responses. Video controls are disabled, and questions have time limits.",
   contentType: "video",
   videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=0&enablejsapi=1",
   duration: 60,
@@ -194,29 +194,29 @@ const mockSpeedLesson: Lesson = {
 const mockSpeedQuestions: Question[] = [
   {
     _id: "sq1",
-    text: "Videoda gösterilen müşteri şikayeti türü nedir?",
+    text: "What type of customer complaint was shown in the video?",
     type: "multipleChoice",
     options: [
-      "Ürün kalitesi",
-      "Teslimat gecikmesi",
-      "Fiyatlandırma",
-      "Müşteri hizmetleri"
+      "Product quality",
+      "Delivery delay",
+      "Pricing",
+      "Customer service"
     ],
     correctAnswer: 1,
     difficulty: "advanced",
     points: 20,
     maxAttempts: 1,
-    displayTime: 15000 // 15 saniye
+    displayTime: 15000 // 15 seconds
   },
   {
     _id: "sq2",
-    text: "Temsilcinin kullandığı çözüm yöntemi nedir?",
+    text: "What solution method did the representative use?",
     type: "multipleChoice",
     options: [
-      "İade teklifi",
-      "İndirim kuponu",
-      "Hızlı teslimat",
-      "Ücretsiz ürün"
+      "Refund offer",
+      "Discount coupon",
+      "Express delivery",
+      "Free product"
     ],
     correctAnswer: 2,
     difficulty: "advanced",
@@ -226,13 +226,13 @@ const mockSpeedQuestions: Question[] = [
   },
   {
     _id: "sq3",
-    text: "Müşterinin son tepkisi nasıldı?",
+    text: "How was the customer's final reaction?",
     type: "multipleChoice",
     options: [
-      "Çok memnun",
-      "Kısmen memnun",
-      "Nötr",
-      "Memnun değil"
+      "Very satisfied",
+      "Somewhat satisfied",
+      "Neutral",
+      "Not satisfied"
     ],
     correctAnswer: 0,
     difficulty: "advanced",
