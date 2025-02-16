@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,45 +19,58 @@ export default function DashboardPage() {
   console.log("🔄 Dashboard Page Rendered")
   
   const router = useRouter()
-  const { user, isLoading, error, setUser, setError, setLoading } = useUserStore()
+  const pathname = usePathname()
+  const { user, isLoading, error, setUser, setError, setLoading, initialize } = useUserStore()
   
   console.log("📊 Current State:", { 
     user: user ? `${user.email} (${user.role})` : null, 
     isLoading, 
-    error 
+    error,
+    pathname 
   })
 
   const initializeUser = useCallback(async () => {
     console.log("🚀 Initializing User...")
-    const { token } = getTokens();
-    console.log("🔑 Token exists:", !!token)
+    const { token, refreshToken } = getTokens();
+    console.log("🔑 Token Status:", { 
+      hasToken: !!token,
+      hasRefreshToken: !!refreshToken
+    })
 
-    if (!token) {
-      console.log("❌ No token found")
+    if (!token && !refreshToken) {
+      console.log("❌ No tokens found - redirecting to signin")
       setLoading(false);
+      router.push("/signin");
       return;
     }
 
     try {
       console.log("📡 Fetching user profile...")
       const userResponse = await getUserProfile();
-      console.log("📥 User Response:", userResponse)
+      console.log("📥 User Response:", JSON.stringify(userResponse, null, 2))
       
       if (userResponse.status === "success" && userResponse.data) {
-        console.log("✅ Setting user data")
+        console.log("✅ Setting user data:", userResponse.data.user)
         setUser(userResponse.data.user);
       } else {
-        console.log("❌ Setting error from response")
-        setError(userResponse.message || "Failed to fetch user profile");
+        console.log("❌ Error from response:", userResponse.error)
+        setError(userResponse.error?.message || "Failed to fetch user profile");
+        if (userResponse.error?.code === "AUTH_001") {
+          router.push("/signin");
+        }
       }
     } catch (err) {
       console.log("💥 Error caught:", err)
       setError("Failed to fetch user profile");
-    } finally {
-      console.log("⏳ Setting loading to false")
-      setLoading(false);
+      router.push("/signin");
     }
-  }, [setUser, setError, setLoading]);
+  }, [setUser, setError, setLoading, router]);
+
+  useEffect(() => {
+    if (!user && !isLoading && !error) {
+      initialize();
+    }
+  }, [user, isLoading, error, initialize]);
 
   useEffect(() => {
     if (isLoading) {
@@ -66,17 +79,18 @@ export default function DashboardPage() {
   }, [isLoading, initializeUser]);
 
   useEffect(() => {
-    console.log("👀 Checking for redirect...", { isLoading, user })
-    if (!isLoading && user) {
-      if (user.role === "trainer" || user.role === "admin") {
+    console.log("👀 Checking for redirect...", { isLoading, user, pathname })
+    // Only redirect if we're exactly on /dashboard
+    if (!isLoading && user && pathname === "/dashboard") {
+      if (user.role.toLowerCase() === "trainer" || user.role.toLowerCase() === "admin") {
         console.log("🔄 Redirecting to /dashboard/manage")
         router.replace("/dashboard/manage")
-      } else if (user.role === "trainee") {
+      } else if (user.role.toLowerCase() === "trainee") {
         console.log("🔄 Redirecting to /dashboard/practice")
         router.replace("/dashboard/practice")
       }
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router, pathname])
 
   if (isLoading) {
     console.log("⌛ Rendering loading state")
@@ -109,6 +123,11 @@ export default function DashboardPage() {
         </Button>
       </div>
     )
+  }
+
+  // If we're not on /dashboard exactly, don't redirect
+  if (pathname !== "/dashboard") {
+    return null;
   }
 
   console.log("✨ Rendering null while redirecting")

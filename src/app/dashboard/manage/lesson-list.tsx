@@ -83,7 +83,9 @@ export function LessonList({
           title: "Success",
           description: "Lesson deleted successfully"
         })
-        onDelete?.(lessonToDelete.id)
+        if (lessonToDelete.id && onDelete) {
+          onDelete(lessonToDelete.id)
+        }
       } else {
         const data = await response.json()
         toast({
@@ -138,7 +140,6 @@ export function LessonList({
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Difficulty</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -148,9 +149,6 @@ export function LessonList({
                     <TableCell className="font-medium">{lesson.title}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{lesson.contentType}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{lesson.difficulty}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -168,7 +166,7 @@ export function LessonList({
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {user?.role === 'trainer' && (
+                        {user?.role === 'Trainer' && (
                           <Button 
                             variant="ghost" 
                             size="icon"

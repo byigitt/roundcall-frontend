@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import dynamic from 'next/dynamic'
+import { useUserStore } from "@/lib/store/use-user-store"
 
 const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false })
 
@@ -33,8 +35,6 @@ interface Lesson {
   textContent?: string
   videoUrl?: string
   duration: number
-  difficulty: "beginner" | "intermediate" | "advanced"
-  tags: string[]
   totalEnrolled: number
   averageRating: number
 }
@@ -133,8 +133,6 @@ Müşteri hizmetleri, modern iş dünyasının en kritik başarı faktörlerinde
 
 Mükemmel müşteri hizmeti, sürekli öğrenme ve gelişme gerektiren bir süreçtir. Temel prensipleri uygulayarak ve müşteri odaklı bir yaklaşım benimseyerek, hem müşteri memnuniyetini hem de işletme başarısını artırabilirsiniz.`,
   duration: 1800,
-  difficulty: "beginner",
-  tags: ["müşteri-hizmetleri", "temel-eğitim"],
   totalEnrolled: 125,
   averageRating: 4.5
 }
@@ -189,8 +187,6 @@ const mockSpeedLesson: Lesson = {
   contentType: "video",
   videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0&autoplay=1&mute=0&enablejsapi=1",
   duration: 60,
-  difficulty: "advanced",
-  tags: ["hızlı-eğitim", "müşteri-hizmetleri"],
   totalEnrolled: 75,
   averageRating: 4.2
 }
@@ -248,6 +244,8 @@ const mockSpeedQuestions: Question[] = [
 
 export default function PracticePage() {
   const { toast } = useToast()
+  const router = useRouter()
+  const { user, isLoading: userLoading } = useUserStore()
   const [isPending, startTransition] = useTransition()
   const [currentStep, setCurrentStep] = useState<"lesson" | "questions">("lesson")
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -269,6 +267,22 @@ export default function PracticePage() {
   const [isVideoComplete, setIsVideoComplete] = useState(false)
   const [videoEndTime, setVideoEndTime] = useState<number | null>(null)
   const [videoStartTime, setVideoStartTime] = useState<number | null>(null)
+
+  useEffect(() => {
+    // Redirect if not a trainee
+    if (!userLoading && user && user.role.toLowerCase() !== "trainee") {
+      router.replace("/dashboard")
+    }
+  }, [user, userLoading, router])
+
+  // Show loading state while checking user
+  if (userLoading || !user) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -440,16 +454,10 @@ export default function PracticePage() {
                 <CardDescription>{currentLesson.description}</CardDescription>
               </div>
               <div className="flex items-center space-x-4">
-                <Badge variant="outline" className={cn(getDifficultyColor(currentLesson.difficulty))}>
-                  {currentLesson.difficulty}
-                </Badge>
                 <Badge variant="secondary">
                   <Clock className="mr-1 h-3 w-3" />
                   {Math.round(currentLesson.duration / 60)} min
                 </Badge>
-                {currentLesson.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">{tag}</Badge>
-                ))}
               </div>
             </div>
           </CardHeader>

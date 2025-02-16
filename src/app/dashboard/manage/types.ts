@@ -10,8 +10,6 @@ export const lessonSchema = z.object({
   textContent: z.string().optional(),
   videoURL: z.string().optional(),
   timeBased: z.number().min(1).max(180).optional(),
-  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
-  tags: z.array(z.string()),
   questions: z.array(z.object({
     questionText: z.string().min(1, "Question text is required"),
     options: z.array(z.string().min(1, "Option text is required")).min(2, "At least 2 options are required"),
@@ -37,12 +35,18 @@ export const lessonSchema = z.object({
 
 export type LessonFormValues = z.infer<typeof lessonSchema>
 
-export interface Lesson extends LessonFormValues {
-  id: string
-  createdBy: string
-  createdAt: string
-  status?: string
-  progress?: number
+export interface Lesson {
+  _id: string;
+  id?: string;  // Keep for backward compatibility
+  title: string;
+  description: string;
+  contentType: string;
+  textContent: string;
+  videoURL?: string;
+  timeBased?: number;
+  questions: Question[];
+  createdAt: string;
+  createdBy: string;
 }
 
 export type Question = {

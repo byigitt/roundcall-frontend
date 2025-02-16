@@ -43,8 +43,6 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
       textContent: "",
       videoURL: "",
       timeBased: undefined,
-      difficulty: "beginner",
-      tags: [],
       questions: [
         {
           questionText: "",
@@ -75,22 +73,6 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
     return () => clearTimeout(timeoutId)
   }, [contentType, form])
 
-  // Add debug information with more details
-  const formState = form.formState
-  const values = form.getValues()
-  console.log('Form Values:', values)
-  console.log('Form Errors:', formState.errors)
-  console.log('Is Form Valid:', formState.isValid)
-  console.log('Is Form Submitting:', formState.isSubmitting)
-  console.log('Is Form Dirty:', formState.isDirty)
-  console.log('Form State:', {
-    isValidating: formState.isValidating,
-    isSubmitted: formState.isSubmitted,
-    submitCount: formState.submitCount,
-    touchedFields: formState.touchedFields,
-    dirtyFields: formState.dirtyFields
-  })
-
   const addQuestion = () => {
     const questions = form.getValues("questions")
     form.setValue("questions", [
@@ -113,11 +95,6 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
     const questions = form.getValues("questions")
     const question = questions[questionIndex]
     form.setValue(`questions.${questionIndex}.options`, [...question.options, ""], { shouldValidate: true })
-  }
-
-  const removeTag = (index: number) => {
-    const tags = form.getValues("tags")
-    form.setValue("tags", tags.filter((_, i) => i !== index), { shouldValidate: true })
   }
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
@@ -152,16 +129,18 @@ export function CreateLessonForm({ onSubmit, isPending }: CreateLessonFormProps)
         textContent: data.textContent || undefined,
         videoURL: data.videoURL || undefined,
         timeBased: data.timeBased,
-        // Additional fields for future API updates
-        difficulty: data.difficulty,
-        tags: data.tags.filter(tag => tag.trim() !== ""),
         questions: data.questions
       }
-
-      // Remove undefined values
-      const cleanedData = Object.fromEntries(
-        Object.entries(submissionData).filter(([_, value]) => value !== undefined)
-      ) as LessonFormValues
+      // Remove undefined values and ensure all required fields are present
+      const cleanedData: LessonFormValues = {
+        title: submissionData.title,
+        description: submissionData.description,
+        contentType: submissionData.contentType,
+        questions: submissionData.questions,
+        ...(submissionData.textContent && { textContent: submissionData.textContent }),
+        ...(submissionData.videoURL && { videoURL: submissionData.videoURL }),
+        ...(submissionData.timeBased && { timeBased: submissionData.timeBased })
+      }
 
       await onSubmit(cleanedData)
       

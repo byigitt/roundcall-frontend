@@ -52,8 +52,6 @@ export function EditLessonDialog({
       description: "",
       contentType: "Text",
       textContent: "",
-      difficulty: "beginner",
-      tags: [],
       questions: [{
         questionText: "",
         options: ["", ""],
@@ -67,10 +65,8 @@ export function EditLessonDialog({
       form.reset({
         title: lesson.title,
         description: lesson.description,
-        contentType: lesson.contentType,
-        difficulty: lesson.difficulty,
+        contentType: lesson.contentType as "Text" | "Video" | "Both",
         textContent: lesson.textContent || "",
-        tags: lesson.tags || [],
         questions: lesson.questions || [{
           questionText: "",
           options: ["", ""],
@@ -124,11 +120,6 @@ export function EditLessonDialog({
     form.setValue(`questions.${questionIndex}.options`, newOptions, { shouldValidate: true })
   }
 
-  const removeTag = (index: number) => {
-    const tags = form.getValues("tags")
-    form.setValue("tags", tags.filter((_, i) => i !== index), { shouldValidate: true })
-  }
-
   if (!lesson) return null
 
   return (
@@ -144,7 +135,7 @@ export function EditLessonDialog({
           <form onSubmit={(e) => {
             e.preventDefault()
             const formData = form.getValues()
-            onUpdate(lesson.id, formData)
+            onUpdate(lesson?.id ?? '', formData)
           }} className="space-y-4">
             <div className="space-y-4">
               <FormField
@@ -202,29 +193,6 @@ export function EditLessonDialog({
               />
               <FormField
                 control={form.control}
-                name="difficulty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Difficulty</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select difficulty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="textContent"
                 render={({ field }) => (
                   <FormItem>
@@ -240,46 +208,6 @@ export function EditLessonDialog({
                   </FormItem>
                 )}
               />
-
-              {/* Tags Section */}
-              <div className="space-y-4">
-                <Label>Tags</Label>
-                {form.watch("tags").map((tag, index) => (
-                  <FormField
-                    key={index}
-                    control={form.control}
-                    name={`tags.${index}`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <div className="flex items-center gap-2">
-                            <Input placeholder="Enter tag" {...field} />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeTag(index)}
-                              className="h-8 w-8"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => form.setValue("tags", [...form.getValues("tags"), ""])}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Tag
-                </Button>
-              </div>
 
               {/* Questions Section */}
               <div className="space-y-4">

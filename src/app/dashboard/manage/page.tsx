@@ -62,6 +62,7 @@ export default function ManagePage() {
 
   async function fetchLessons() {
     try {
+      setIsLoading(true)
       const response = await fetch(`${API_URL}/lessons`, {
         method: "GET",
         headers: {
@@ -71,14 +72,15 @@ export default function ManagePage() {
         credentials: 'include',
       })
 
-      const data = await response.json()
+      const data = await response.json()  
       console.log(data)
       if (data.length > 0) {
-        setLessons(data.data.lessons)
+        setLessons(data)
       } else {
         setLessons([])
       }
     } catch (error) {
+      console.log(error)
       toast({
         variant: "destructive",
         title: "Error",
@@ -179,7 +181,7 @@ export default function ManagePage() {
 
                   const result = await response.json()
                   console.log(result);
-                  if (result.status === "success") {
+                  if (result.title) {
                     toast({
                       title: "Success",
                       description: "Lesson created successfully",

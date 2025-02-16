@@ -23,7 +23,11 @@ interface Trainee {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  totalAssignedLessons: number;
+  completedLessons: number;
+  inProgressLessons: number;
+  notStartedLessons: number;
+  completionRate: number;
 }
 
 interface TraineeLesson {
@@ -53,22 +57,41 @@ interface TraineeWithLessons {
   role: string
   lessons: TraineeLesson[]
 }
-
 interface AssignedTrainee {
   _id: string
   lesson: string
-  trainee: {
+  traineeID: string
+  trainerID: string
+  trainee?: {
     _id: string
     email: string
     firstName: string
     lastName: string
+    totalAssignedLessons: number
+    completedLessons: number
+    inProgressLessons: number
+    completionRate: number
   }
-  assignedBy: string
-  status: 'pending' | 'in_progress' | 'completed' | 'expired'
-  progress: number
-  dueDate?: string
-  createdAt: string
-  updatedAt: string
+  status: 'Assigned' | 'In Progress' | 'Completed' | 'Expired'
+  assignedAt: string
+  completedAt: string
+}
+
+interface AssignedLesson {
+  _id: string;
+  lesson: {
+    _id: string;
+    title: string;
+  };
+  trainee: {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  status: 'pending' | 'in_progress' | 'completed';
+  progress: number;
+  createdAt: string;
 }
 
 interface AssignLessonDialogProps {
@@ -101,48 +124,75 @@ export function AssignLessonDialog({
     
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/users/my-trainees/lessons?lessonId=${lesson.id}`, {
+      // First, get all assigned lessons
+      const assignedResponse = await fetch(`${API_URL}/lessons/assigned`, {
         headers: {
           ...getAuthHeader()
         },
         credentials: 'include',
       })
-      const data = await response.json()
-      if (data.status === "success") {
-        console.log(data.data.trainees);
-        try {
-          const lessonTrainees = data.data.trainees
-          .filter((trainee: TraineeWithLessons) => 
-            Array.isArray(trainee.lessons) && trainee.lessons.length > 0
+      const assignedData = await assignedResponse.json()
+      
+      if (Array.isArray(assignedData)) {
+        // Filter assignments for current lesson
+        const currentLessonAssignments = assignedData.filter(
+          assignment => assignment.lesson?._id === lesson._id
+        )
+        
+        // Get trainee details
+        const traineesResponse = await fetch(`${API_URL}/users/assigned-trainees`, {
+          headers: {
+            ...getAuthHeader()
+          },
+          credentials: 'include',
+        })
+        const traineesData = await traineesResponse.json()
+        
+        // Map assignments with detailed trainee info
+        const mappedAssignments = currentLessonAssignments.map(assignment => {
+          const traineeDetails = traineesData.find(
+            (trainee: any) => trainee._id === assignment.trainee?._id
           )
-          .map((trainee: TraineeWithLessons) => {
-            const lessonAssignment = trainee.lessons?.find((l: TraineeLesson) => l.trainee === trainee._id)
-            return {
-              _id: lessonAssignment?._id || '',
-              lesson: lesson.id,
-              trainee: {
-                _id: trainee._id,
-                email: trainee.email,
-                firstName: trainee.firstName,
-                lastName: trainee.lastName
-              },
-              assignedBy: lessonAssignment?.assignedBy || '',
-              status: lessonAssignment?.status || 'pending',
-              progress: lessonAssignment?.progress || 0,
-              dueDate: undefined,
-              createdAt: lessonAssignment?.createdAt || '',
-              updatedAt: lessonAssignment?.updatedAt || ''
-            }
-          })
-          setAssignedTrainees(lessonTrainees)
-        } catch (error) {
-          console.error('Error fetching assigned trainees:', error)
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to fetch assigned trainees"
-          })
-        }
+          
+          return {
+            _id: assignment._id,
+            lesson: assignment.lesson?._id,
+            traineeID: assignment.trainee?._id,
+            trainerID: assignment.assignedBy,
+            trainee: traineeDetails ? {
+              _id: traineeDetails._id,
+              email: traineeDetails.email,
+              firstName: traineeDetails.firstName,
+              lastName: traineeDetails.lastName,
+              totalAssignedLessons: traineeDetails.totalAssignedLessons || 0,
+              completedLessons: traineeDetails.completedLessons || 0,
+              inProgressLessons: traineeDetails.inProgressLessons || 0,
+              completionRate: traineeDetails.completionRate || 0
+            } : {
+              _id: assignment.trainee?._id,
+              email: assignment.trainee?.email || '',
+              firstName: assignment.trainee?.firstName || 'Unknown',
+              lastName: assignment.trainee?.lastName || 'User',
+              totalAssignedLessons: 0,
+              completedLessons: 0,
+              inProgressLessons: 0,
+              completionRate: 0
+            },
+            status: assignment.status || 'Assigned',
+            assignedAt: assignment.createdAt,
+            completedAt: assignment.completedAt
+          }
+        })
+
+        console.log('Mapped assignments:', mappedAssignments)
+        setAssignedTrainees(mappedAssignments)
+      } else {
+        console.error('Invalid assigned data format:', assignedData)
+        toast({
+          variant: "destructive", 
+          title: "Error",
+          description: "Failed to fetch assigned trainees"
+        })
       }
     } catch (error) {
       console.error('Error fetching assigned trainees:', error)
@@ -161,7 +211,7 @@ export function AssignLessonDialog({
 
     setIsSubmitting(true)
     try {
-      const response = await fetch(`${API_URL}/assigned-lessons/assign`, {
+      const response = await fetch(`${API_URL}/lessons/${lesson.id}/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,18 +219,17 @@ export function AssignLessonDialog({
         },
         credentials: 'include',
         body: JSON.stringify({
-          lessonId: lesson.id,
-          traineeEmails: [traineeEmail]
+          trainee_email: traineeEmail
         })
       })
 
       const data = await response.json()
-      if (data.status === "success") {
+      console.log('Assign response:', data)
+      
+      if (response.ok) {
         toast({
           title: "Success",
-          description: data.data.summary.newAssignments > 0 
-            ? "Lesson assigned successfully"
-            : "Trainee already assigned to this lesson"
+          description: "Lesson assigned successfully"
         })
         setTraineeEmail("")
         fetchAssignedTrainees()
@@ -208,9 +257,10 @@ export function AssignLessonDialog({
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/assigned-lessons/${assignmentId}`, {
+      const response = await fetch(`${API_URL}/lessons/assigned/${assignmentId}`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           ...getAuthHeader()
         },
         credentials: 'include',
@@ -244,13 +294,13 @@ export function AssignLessonDialog({
 
   function getStatusColor(status: AssignedTrainee['status']) {
     switch (status) {
-      case 'pending':
+      case 'Assigned':
         return 'secondary'
-      case 'in_progress':
+      case 'In Progress':
         return 'default'
-      case 'completed':
+      case 'Completed':
         return 'default'
-      case 'expired':
+      case 'Expired':
         return 'destructive'
       default:
         return 'secondary'
@@ -259,13 +309,13 @@ export function AssignLessonDialog({
 
   function getStatusIcon(status: AssignedTrainee['status']) {
     switch (status) {
-      case 'pending':
+      case 'Assigned':
         return <HourglassIcon className="h-3 w-3" />
-      case 'in_progress':
+      case 'In Progress':
         return <Timer className="h-3 w-3" />
-      case 'completed':
+      case 'Completed':
         return <CheckCircle2 className="h-3 w-3" />
-      case 'expired':
+      case 'Expired':
         return <AlertCircle className="h-3 w-3" />
       default:
         return null
@@ -329,50 +379,47 @@ export function AssignLessonDialog({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {assignedTrainees.map((assignment) => (
-                    <div 
-                      key={assignment._id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted"
-                    >
-                      <div className="flex items-center gap-4 flex-1">
-                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">
-                              {assignment.trainee.firstName} {assignment.trainee.lastName}
-                            </p>
-                            <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-                              <div className="flex items-center gap-1.5">
-                                {getStatusIcon(assignment.status)}
-                                <span>{assignment.status.replace('_', ' ')}</span>
-                              </div>
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span className="truncate">{assignment.trainee.email}</span>
-                            <div className="flex items-center gap-1">
-                              <BarChart className="h-3 w-3" />
-                              <span>{assignment.progress}%</span>
+                  {assignedTrainees.map((assignment) => {
+                    // Find trainee details from the trainees data
+                    const traineeDetails = assignedTrainees.find(
+                      (trainee: any) => trainee.id === assignment.traineeID
+                    );
+                    
+                    return (
+                      <div 
+                        key={assignment._id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted"
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">
+                                {traineeDetails?.trainee?.firstName} {traineeDetails?.trainee?.lastName}
+                              </p>
+                              <Badge variant={getStatusColor(assignment.status)} className="capitalize">
+                                <div className="flex items-center gap-1.5">
+                                  {getStatusIcon(assignment.status)}
+                                  <span>{assignment.status.replace('_', ' ')}</span>
+                                </div>
+                              </Badge>
                             </div>
-                            {assignment.dueDate && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>Due {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <span className="truncate">{traineeDetails?.trainee?.email}</span>
+                            </div>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => { console.log(assignment); handleUnassign(assignment._id)}}
+                          className="h-8 w-8 shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleUnassign(assignment._id)}
-                        className="h-8 w-8 shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
