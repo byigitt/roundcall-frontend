@@ -473,8 +473,10 @@ export default function PracticePage() {
                 />
               </div>
             ) : (
-              <ScrollArea className="h-[400px] rounded-md border p-4">
-                <ReactMarkdown>{currentLesson.textContent || ""}</ReactMarkdown>
+              <ScrollArea className="h-[600px] rounded-md border p-6">
+                <article className="prose prose-sm md:prose-base lg:prose-lg dark:prose-invert prose-headings:font-heading prose-headings:leading-tight hover:prose-a:text-primary transition-colors">
+                  <ReactMarkdown>{currentLesson.textContent || ""}</ReactMarkdown>
+                </article>
               </ScrollArea>
             )}
           </CardContent>
