@@ -78,19 +78,6 @@ export function ViewLessonDialog({
               </div>
             )}
 
-            {/* Tags Section */}
-            {lesson.tags && lesson.tags.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-lg font-semibold">Tags</h4>
-                <div className="flex flex-wrap gap-2">
-                  {lesson.tags.map((tag, index) => (
-                    <Badge key={index} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Questions Section */}
             {lesson.questions && lesson.questions.length > 0 && (
