@@ -57,6 +57,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1
 
 export async function login({ email, password }: LoginRequest): Promise<AuthResponse> {
   try {
+    console.log("🔑 Attempting login...")
     const response = await fetch(`${API_URL}/users/login`, {
       method: "POST",
       credentials: 'include',
@@ -67,47 +68,66 @@ export async function login({ email, password }: LoginRequest): Promise<AuthResp
     })
 
     const data = await response.json()
+    console.log("📥 Login Response:", { status: response.status, ok: response.ok, data })
 
-    if (response.ok && data.access_token) {
-      setTokens({
-        token: data.access_token,
-        refreshToken: data.refresh_token,
-        tokenType: data.token_type,
-        expiresIn: 3600 // Default to 1 hour if not provided
-      })
-
-      // Fetch user profile after successful login
-      const userResponse = await getUserProfile()
-      
-      if (userResponse.status === "error" || !userResponse.data?.user) {
-        return {
-          status: 'error',
-          error: {
-            code: 'USER_001',
-            message: "Failed to fetch user profile"
-          }
-        }
-      }
-
+    if (!response.ok) {
+      console.log("❌ Login failed:", data)
       return {
-        status: 'success',
-        data: {
-          user: userResponse.data.user,
-          token: data.access_token,
-          refreshToken: data.refresh_token,
-          expiresIn: 3600
+        status: 'error',
+        error: {
+          code: 'AUTH_001',
+          message: data.message || "Invalid credentials"
         }
       }
     }
 
+    if (!data.access_token) {
+      console.log("❌ No access token in response:", data)
+      return {
+        status: 'error',
+        error: {
+          code: 'AUTH_002',
+          message: "Invalid server response"
+        }
+      }
+    }
+
+    console.log("✅ Setting tokens...")
+    setTokens({
+      token: data.access_token,
+      refreshToken: data.refresh_token,
+      tokenType: data.token_type,
+      expiresIn: data.expires_in || 3600
+    })
+
+    // Fetch user profile after successful login
+    console.log("👤 Fetching user profile...")
+    const userResponse = await getUserProfile()
+    console.log("📥 User Profile Response:", userResponse)
+    
+    if (userResponse.status === "error" || !userResponse.data?.user) {
+      console.log("❌ Failed to fetch user profile:", userResponse)
+      return {
+        status: 'error',
+        error: {
+          code: 'USER_001',
+          message: "Failed to fetch user profile"
+        }
+      }
+    }
+
+    console.log("✅ Login successful!")
     return {
-      status: 'error',
-      error: {
-        code: 'AUTH_001',
-        message: "Invalid credentials"
+      status: 'success',
+      data: {
+        user: userResponse.data.user,
+        token: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in || 3600
       }
     }
   } catch (error) {
+    console.error("💥 Login error:", error)
     return {
       status: 'error',
       error: {
