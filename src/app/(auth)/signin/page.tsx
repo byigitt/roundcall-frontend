@@ -44,20 +44,16 @@ const signInSchema = z.object({
 
 type SignInFormValues = z.infer<typeof signInSchema>
 
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'Trainer' | 'Trainee';
-  createdAt: string;
-}
-
 export default function SignInPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [isPending, startTransition] = React.useTransition()
-  const { setUser } = useUserStore()
+  const [isLoading, setIsLoading] = React.useState(false)
+  const { setUser, clearUser } = useUserStore()
+
+  React.useEffect(() => {
+    // Clear any existing user state when mounting the sign-in page
+    clearUser()
+  }, [clearUser])
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -68,40 +64,55 @@ export default function SignInPage() {
   })
 
   async function onSubmit(data: SignInFormValues) {
-    startTransition(async () => {
-      try {
-        const response = await login(data)
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await login(data)
+      console.log("🔐 Login Response in SignIn:", response)
+      
+      if (response.status === 'success' && response.data) {
+        console.log("👤 User data:", response.data.user)
+        setUser(response.data.user)
         
-        if (response.status === 'success' && response.data) {
-          // User data is already in the login response
-          setUser(response.data.user)
-          
-          toast({
-            title: "Welcome back",
-            description: "You have successfully signed in.",
-          })
+        toast({
+          title: "Welcome back",
+          description: "You have successfully signed in.",
+        })
 
-          // Redirect based on user role
-          if (response.data.user.role === "Trainer") {
-            router.push("/dashboard/manage")
-          } else {
-            router.push("/dashboard/practice")
-          }
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: response.error?.message || "Invalid credentials.",
-          })
+        // Use replace instead of push to prevent back button issues
+        console.log("🚀 Redirecting based on role:", response.data.user.role)
+        const targetPath = response.data.user.role.toLowerCase() === "trainer" 
+          ? "/dashboard/manage" 
+          : "/dashboard/practice"
+        
+        console.log("📍 Target path:", targetPath)
+        try {
+          await router.replace(targetPath)
+          console.log("✅ Navigation completed")
+        } catch (navError) {
+          console.error("❌ Navigation failed:", navError)
+          // Fallback to window.location if router fails
+          window.location.href = targetPath
         }
-      } catch (error) {
+      } else {
+        console.log("❌ Login failed:", response.error)
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Something went wrong. Please try again.",
+          description: response.error?.message || "Invalid credentials.",
         })
+        setIsLoading(false)
       }
-    })
+    } catch (error) {
+      console.error("💥 Submit error:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+      })
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -128,7 +139,7 @@ export default function SignInPage() {
                       autoCapitalize="none"
                       autoComplete="email"
                       autoCorrect="off"
-                      disabled={isPending}
+                      disabled={isLoading}
                       {...field}
                     />
                   </FormControl>
@@ -149,7 +160,7 @@ export default function SignInPage() {
                       autoCapitalize="none"
                       autoComplete="current-password"
                       autoCorrect="off"
-                      disabled={isPending}
+                      disabled={isLoading}
                       {...field}
                     />
                   </FormControl>
@@ -157,9 +168,15 @@ export default function SignInPage() {
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign in
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
         </Form>
