@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { getAuthHeader } from "@/lib/auth/tokens"
-import { AssignedLesson } from "../page"
+import { AssignedLesson } from "@/lib/services/lesson-service"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
@@ -19,7 +19,7 @@ interface LessonAnalytics {
 
 export async function trackLessonAnalytics(analytics: LessonAnalytics) {
   try {
-    const response = await fetch(`${API_URL}/assigned-lessons/${analytics.assignmentId}/progress`, {
+    const response = await fetch(`${API_URL}/lessons/assigned/${analytics.assignmentId}/progress`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -62,8 +62,8 @@ export function LessonTracker({ lesson, isReading }: LessonTrackerProps) {
       // Track every 30 seconds or when scroll position changes significantly
       if (timeSpent - lastTrackTime >= 30000 || Math.abs(scrollPosition - window.scrollY) > 500) {
         trackLessonAnalytics({
-          lessonId: lesson.lesson._id,
-          assignmentId: lesson._id,
+          lessonId: lesson.lessonID,
+          assignmentId: lesson.id,
           event: 'progress',
           data: {
             progress: Math.min(Math.round((scrollPosition / document.documentElement.scrollHeight) * 100), 100),
@@ -82,8 +82,8 @@ export function LessonTracker({ lesson, isReading }: LessonTrackerProps) {
       scrollPosition = window.scrollY
 
       trackLessonAnalytics({
-        lessonId: lesson.lesson._id,
-        assignmentId: lesson._id,
+        lessonId: lesson.lessonID,
+        assignmentId: lesson.id,
         event: 'start'
       })
 

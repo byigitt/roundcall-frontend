@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -19,13 +20,60 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Search, Eye, Clock, HourglassIcon, Timer, CheckCircle2, AlertCircle } from "lucide-react"
-import { Lesson, LessonStatus } from "@/lib/services/lesson-service"
+import { Loader2, Search, Eye, Clock, HourglassIcon, Timer, CheckCircle2, AlertCircle, BarChart2, Video, CalendarDays, User, CheckCircle, PlayCircle } from "lucide-react"
+import { AssignedLesson, LessonStatus, Question, ContentType } from "@/lib/services/lesson-service"
+import { formatDistanceToNow } from "date-fns"
+import { ArrowRight, BookOpen } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface LessonListProps {
-  lessons: Lesson[]
+  lessons: AssignedLesson[]
   isLoading: boolean
-  onView: (lesson: Lesson) => void
+  onView: (lesson: AssignedLesson) => void
+}
+
+const getStatusColor = (status: LessonStatus) => {
+  switch (status) {
+    case "Completed":
+      return "bg-green-500"
+    case "In Progress":
+      return "bg-blue-500"
+    case "Assigned":
+      return "bg-yellow-500"
+    default:
+      return "bg-gray-500"
+  }
+}
+
+const getStatusIcon = (status: LessonStatus) => {
+  switch (status) {
+    case "Completed":
+      return <CheckCircle className="h-4 w-4" />
+    case "In Progress":
+      return <PlayCircle className="h-4 w-4" />
+    case "Assigned":
+      return <Clock className="h-4 w-4" />
+    default:
+      return null
+  }
+}
+
+const getContentTypeIcon = (contentType: string) => {
+  switch (contentType.toLowerCase()) {
+    case "text":
+      return <BookOpen className="h-4 w-4" />
+    case "video":
+      return <PlayCircle className="h-4 w-4" />
+    case "both":
+      return (
+        <div className="flex space-x-1">
+          <BookOpen className="h-4 w-4" />
+          <PlayCircle className="h-4 w-4" />
+        </div>
+      )
+    default:
+      return null
+  }
 }
 
 export function LessonList({
@@ -36,39 +84,56 @@ export function LessonList({
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<LessonStatus | "all">("all")
 
-  const filteredLessons = lessons.filter(lesson => {
-    const matchesSearch = 
-      lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lesson.description.toLowerCase().includes(searchTerm.toLowerCase())
+  console.log("Original lessons:", lessons);
+  const filteredLessons = lessons.filter(assignment => {
+    console.log("Checking assignment:", assignment);
+    console.log("Search term:", searchTerm);
+    console.log("Status filter:", statusFilter);
+    
+    // Only filter by search if there is a search term
+    const matchesSearch = searchTerm === "" ? true :
+      assignment.lesson?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      assignment.lesson?.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (statusFilter === "all") return matchesSearch
-    return matchesSearch && lesson.status === statusFilter
+    console.log("Matches search:", matchesSearch);
+    console.log("Current status:", assignment.status);
+
+    if (statusFilter === "all") return matchesSearch;
+    return matchesSearch && assignment.status === statusFilter;
   })
 
-  function getStatusColor(status: LessonStatus) {
-    switch (status) {
-      case 'Assigned':
-        return 'secondary'
-      case 'In Progress':
-        return 'default'
-      case 'Completed':
-        return 'default'
-      default:
-        return 'secondary'
-    }
+  console.log("Filtered lessons:", filteredLessons);
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="overflow-hidden">
+            <CardHeader className="space-y-2">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-8 w-full" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    )
   }
 
-  function getStatusIcon(status: LessonStatus) {
-    switch (status) {
-      case 'Assigned':
-        return <HourglassIcon className="h-3 w-3" />
-      case 'In Progress':
-        return <Timer className="h-3 w-3" />
-      case 'Completed':
-        return <CheckCircle2 className="h-3 w-3" />
-      default:
-        return null
-    }
+  if (!lessons.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Lessons Found</CardTitle>
+          <CardDescription>You have no assigned lessons at the moment.</CardDescription>
+        </CardHeader>
+      </Card>
+    )
   }
 
   return (
@@ -105,74 +170,66 @@ export function LessonList({
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : filteredLessons.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No lessons found
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredLessons.map((lesson) => (
-              <div
-                key={lesson.id}
-                className="flex items-start justify-between p-4 rounded-lg border hover:border-primary hover:shadow-sm transition-all cursor-pointer"
-                onClick={() => onView(lesson)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    onView(lesson)
-                  }
-                }}
-              >
-                <div className="space-y-4 w-full">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{lesson.title}</div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <Badge variant="outline">
-                      {lesson.contentType}
-                    </Badge>
-                    {lesson.timeBased && (
-                      <Badge variant="secondary">
-                        {lesson.timeBased} minutes
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {lesson.createdAt && (
-                      <div className="flex items-center gap-1">
-                        Created {new Date(lesson.createdAt).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  {lesson.progress !== undefined && (
-                    <div className="mt-2 space-y-1">
-                      <Progress value={lesson.progress} className="h-2" />
-                      <div className="text-xs text-right text-muted-foreground">
-                        {lesson.progress}% complete
-                      </div>
-                    </div>
-                  )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredLessons.map((lesson) => (
+            <Card key={lesson.id} className="overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="line-clamp-1">{lesson.lesson?.title}</CardTitle>
+                  <Badge
+                    variant="secondary"
+                    className={`${getStatusColor(lesson.status)} text-white`}
+                  >
+                    <span className="flex items-center space-x-1">
+                      {getStatusIcon(lesson.status)}
+                      <span>{lesson.status}</span>
+                    </span>
+                  </Badge>
                 </div>
+                <CardDescription className="flex items-center space-x-2">
+                  {lesson.lesson?.contentType && (
+                    <span className="flex items-center space-x-1">
+                      {getContentTypeIcon(lesson.lesson.contentType)}
+                      <span>{lesson.lesson.contentType}</span>
+                    </span>
+                  )}
+                  {lesson.assignedAt && (
+                    <span className="text-sm text-muted-foreground">
+                      • Assigned {formatDistanceToNow(new Date(lesson.assignedAt))} ago
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="line-clamp-3 text-sm text-muted-foreground">
+                  {lesson.lesson?.description}
+                </p>
+              </CardContent>
+              <CardFooter>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onView(lesson)
-                  }}
-                  className="ml-4"
+                  className="w-full"
+                  onClick={() => onView(lesson)}
+                  variant={lesson.status === "Completed" ? "secondary" : "default"}
+                  disabled={lesson.status === "Completed"}
                 >
-                  <Eye className="h-4 w-4" />
+                  <span className="flex items-center space-x-2">
+                    {lesson.status === "Completed" ? (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Completed</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Continue</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </span>
                 </Button>
-              </div>
-            ))}
-          </div>
-        )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
